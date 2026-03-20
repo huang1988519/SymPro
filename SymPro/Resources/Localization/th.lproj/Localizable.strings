@@ -1,0 +1,124 @@
+"Preparing scan…" = "กำลังเตรียมสแกน…";
+"Spotlight scanning .dSYMs…" = "กำลังสแกน dSYMs ด้วย Spotlight…";
+"Not scanned" = "ยังไม่ได้สแกน";
+"Scan failed: %@" = "สแกนไม่สำเร็จ: %@";
+"Indexed %d UUIDs (updated %d this scan)" = "สร้างดัชนีแล้ว: %d UUID (อัปเดต %d ระหว่างสแกนนี้)";
+
+"Select Crash Logs" = "เลือกไฟล์บันทึกเครช";
+"Select dSYMs or .xcarchive" = "เลือก dSYMs หรือ .xcarchive";
+"Select dSYM for %@" = "เลือก dSYM สำหรับ %@";
+
+"Search" = "ค้นหา";
+"Copy" = "คัดลอก";
+"Raw Log" = "บันทึกดิบ";
+
+"LIBRARY" = "ไลบรารี";
+"SYMBOL / INSTRUCTION" = "สัญลักษณ์ / คำสั่ง";
+
+"Auto dSYM Discovery Directories" = "ไดเรกทอรีค้นหา dSYM อัตโนมัติ";
+
+"sidebar.noData" = "ไม่มีข้อมูลขัดข้อง";
+"sidebar.threads.title" = "เธรด";
+"sidebar.thread.crashed" = "ขัดข้อง";
+"Thread %d" = "เธรด %d";
+
+"Version:" = "เวอร์ชัน：";
+"OS:" = "ระบบปฏิบัติการ：";
+"Exception:" = "ข้อยกเว้น：";
+
+"Authorization Directory" = "Authorization Directory";
+"Choose directories for dSYM Discovery (manual confirmation required)" = "Choose directories for dSYM Discovery (manual confirmation required)";
+"Authorize" = "Authorize";
+"Choose directories for dSYM Auto Discovery" = "Choose directories for dSYM Auto Discovery";
+
+"(Matched)" = "(Matched)";
+"(Unmatched)" = "(Unmatched)";
+
+"Showing %d / %d" = "Showing %d / %d";
+"dSYM Mach-O UUID: %@ %@" = "dSYM Mach-O UUID: %@ %@";
+
+"DWARF file size: %@" = "DWARF file size: %@";
+"DWARF file size: -" = "DWARF file size: -";
+
+"Last modified: %@" = "Last modified: %@";
+"Last modified: -" = "Last modified: -";
+
+"Swift-dwarf session: Openable (arch=%@, slice=%@)" = "Swift-dwarf session: Openable (arch=%@, slice=%@)";
+"Swift-dwarf session: Failed to open: %@" = "Swift-dwarf session: Failed to open: %@";
+
+"Invalid address format: %@" = "Invalid address format: %@";
+"(No function name)" = "(No function name)";
+"(No file line number)" = "(No file line number)";
+
+"Detected %@." = "Detected %@.";
+"Crash type: %@" = "Crash type: %@";
+
+"Cancelled" = "Cancelled";
+"No matching dSYM found" = "No matching dSYM found";
+"Invalid address" = "Invalid address";
+"dSYM UUID does not match the crash image UUID.\n\nPlease make sure you selected dSYMs from the same build (the UUID must match).\n\n%@" = "dSYM UUID does not match the crash image UUID.\n\nPlease make sure you selected dSYMs from the same build (the UUID must match).\n\n%@";
+"Failed to symbolicate any frames from the dSYM.\n\n%@" = "Failed to symbolicate any frames from the dSYM.\n\n%@";
+
+"No __DWARF found (may not be a usable dSYM)" = "No __DWARF found (may not be a usable dSYM)";
+"Symbolication available: function name + file line number" = "Symbolication available: function name + file line number";
+"Symbolication available: function name (missing line table)" = "Symbolication available: function name (missing line table)";
+"Incomplete DWARF information" = "Incomplete DWARF information";
+
+"UUID Matching: -" = "UUID Matching: -";
+"UUID Matching: Match" = "UUID Matching: Match";
+"UUID Matching: %d/%d" = "UUID Matching: %d/%d";
+
+"Symbolication: Running" = "Symbolication: Running";
+"Symbolication: Failed" = "Symbolication: Failed";
+"Symbolication: Done" = "Symbolication: Done";
+"Symbolication: -" = "Symbolication: -";
+
+"Please open a crash file first" = "Please open a crash file first";
+"Symbolication in progress" = "Symbolication in progress";
+"The current crash file contains no matching UUID information" = "The current crash file contains no matching UUID information";
+"No usable dSYM matched (import on the right or configure auto-discovery directories)" = "No usable dSYM matched (import on the right or configure auto-discovery directories)";
+"Resolve stack symbols using the matched dSYMs" = "Resolve stack symbols using the matched dSYMs";
+
+"Symbolicate" = "ทำสัญลักษณ์";
+"No symbols found" = "ไม่พบสัญลักษณ์";
+
+"Manual" = "ด้วยตนเอง";
+"Auto" = "อัตโนมัติ";
+"Auto-match available" = "พร้อมแมทช์อัตโนมัติ";
+"Missing" = "ขาดหาย";
+
+"Open .ips / .crash files" = "Open .ips / .crash files";
+"Rescan the authorized dSYM search directories in Settings" = "Rescan the authorized dSYM search directories in Settings";
+"Re-match UUIDs for this crash using the current index/imported dSYMs (no index rebuild)" = "Re-match UUIDs for this crash using the current index/imported dSYMs (no index rebuild)";
+
+"Please select matching dSYMs for the target Mach-O first, then click to resolve addresses into symbols" = "Please select matching dSYMs for the target Mach-O first, then click to resolve addresses into symbols";
+"Use the selected dSYMs to resolve stack addresses into function names and line numbers" = "Use the selected dSYMs to resolve stack addresses into function names and line numbers";
+
+"Select dSYM for missing UUIDs…" = "เลือก dSYM สำหรับ UUID ที่หายไป…";
+"Re-match" = "จับคู่อีกครั้ง";
+
+"Show system images" = "แสดงอิมเมจระบบ";
+
+"Open New File" = "เปิดไฟล์ใหม่";
+"Export Report" = "ส่งออกรายงาน";
+"Rescan" = "สแกนซ้ำ";
+"Backtrace" = "แบ็กเทรซ";
+
+"Import Crash Report" = "นำเข้ารายงานการขัดข้อง";
+"Drag and drop .ips or .crash files to start forensic analysis." = "ลากและวางไฟล์ .ips หรือ .crash เพื่อเริ่มการวิเคราะห์เชิงนิติวิทยาศาสตร์";
+"Click to upload or drag files here" = "คลิกเพื่ออัปโหลดหรือ ลากไฟล์มาที่นี่";
+"Parsing kernel dump file…" = "กำลังแยกวิเคราะห์ไฟล์ดัมพ์เคอร์เนล…";
+
+"%d dSYMs" = "%d dSYMs";
+"Parsed %d Mach-O images. Select a dSYM for each image." = "Parsed %d Mach-O images. Select a dSYM for each image.";
+"Mach-O Architectures: %@" = "Mach-O Architectures: %@";
+"Top Frame：%@" = "Top Frame：%@";
+
+"dSYM actions" = "dSYM actions";
+"Add dSYM Discovery directories: choose a recommended directory or a custom directory (manual authorization required)." = "Add dSYM Discovery directories: choose a recommended directory or a custom directory (manual authorization required).";
+"View dSYM details" = "View dSYM details";
+
+"Crashed" = "Crashed";
+"Main" = "Main";
+"Queue: %@" = "Queue: %@";
+

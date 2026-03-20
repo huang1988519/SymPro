@@ -1,0 +1,3 @@
+[submodule "Packages/swift-dwarf"]
+	path = Packages/swift-dwarf
+	url = https://github.com/xxx/swift-dwarf

@@ -1,0 +1,124 @@
+"Preparing scan…" = "スキャン準備中…";
+"Spotlight scanning .dSYMs…" = "Spotlight が dSYMs をスキャン中…";
+"Not scanned" = "未スキャン";
+"Scan failed: %@" = "スキャンに失敗：%@";
+"Indexed %d UUIDs (updated %d this scan)" = "インデックス作成：%d 個の UUID（今回 %d 件を更新）";
+
+"Select Crash Logs" = "クラッシュログを選択";
+"Select dSYMs or .xcarchive" = "dSYMs または .xcarchive を選択";
+"Select dSYM for %@" = "%@ の dSYM を選択";
+
+"Search" = "検索";
+"Copy" = "コピー";
+"Raw Log" = "生ログ";
+
+"LIBRARY" = "ライブラリ";
+"SYMBOL / INSTRUCTION" = "シンボル / 命令";
+
+"Auto dSYM Discovery Directories" = "自動 dSYM 検出用ディレクトリ";
+
+"sidebar.noData" = "クラッシュデータがありません";
+"sidebar.threads.title" = "スレッド";
+"sidebar.thread.crashed" = "クラッシュ";
+"Thread %d" = "%d スレッド";
+
+"Version:" = "バージョン：";
+"OS:" = "OS：";
+"Exception:" = "例外：";
+
+"Authorization Directory" = "承認ディレクトリ";
+"Choose directories for dSYM Discovery (manual confirmation required)" = "dSYM Discovery のディレクトリを選択（手動確認が必要）";
+"Authorize" = "承認";
+"Choose directories for dSYM Auto Discovery" = "dSYM 自動ディスカバリのディレクトリを選択";
+
+"(Matched)" = "（一致）";
+"(Unmatched)" = "（不一致）";
+
+"Showing %d / %d" = "%d / %d を表示";
+"dSYM Mach-O UUID: %@ %@" = "dSYM Mach-O UUID: %@ %@";
+
+"DWARF file size: %@" = "DWARF ファイルサイズ：%@";
+"DWARF file size: -" = "DWARF ファイルサイズ：-";
+
+"Last modified: %@" = "最終更新：%@";
+"Last modified: -" = "最終更新：-";
+
+"Swift-dwarf session: Openable (arch=%@, slice=%@)" = "swift-dwarf セッション：開けます（arch=%@, slice=%@）";
+"Swift-dwarf session: Failed to open: %@" = "swift-dwarf セッション：開けません：%@";
+
+"Invalid address format: %@" = "無効なアドレス形式：%@";
+"(No function name)" = "（関数名なし）";
+"(No file line number)" = "（ファイル行番号なし）";
+
+"Detected %@." = "%@ を検出しました。";
+"Crash type: %@" = "クラッシュ種別：%@";
+
+"Cancelled" = "キャンセル";
+"No matching dSYM found" = "一致する dSYM が見つかりません";
+"Invalid address" = "無効なアドレス";
+"dSYM UUID does not match the crash image UUID.\n\nPlease make sure you selected dSYMs from the same build (the UUID must match).\n\n%@" = "dSYM UUID がクラッシュ画像 UUID と一致しません。\n\n同じビルドから dSYM を選択していることを確認してください（UUID 必須一致）。\n\n%@";
+"Failed to symbolicate any frames from the dSYM.\n\n%@" = "dSYM からシンボル化できるフレームがありません。\n\n%@";
+
+"No __DWARF found (may not be a usable dSYM)" = "__DWARF が見つかりません（利用可能な dSYM ではない可能性があります）";
+"Symbolication available: function name + file line number" = "シンボル化可能：関数名 + ファイル行番号";
+"Symbolication available: function name (missing line table)" = "シンボル化可能：関数名（行テーブルがありません）";
+"Incomplete DWARF information" = "DWARF 情報が不完全です";
+
+"UUID Matching: -" = "UUID マッチ：-";
+"UUID Matching: Match" = "UUID マッチ：一致";
+"UUID Matching: %d/%d" = "UUID マッチ：%d/%d";
+
+"Symbolication: Running" = "シンボル化：実行中";
+"Symbolication: Failed" = "シンボル化：失敗";
+"Symbolication: Done" = "シンボル化：完了";
+"Symbolication: -" = "シンボル化：-";
+
+"Please open a crash file first" = "まずクラッシュファイルを開いてください";
+"Symbolication in progress" = "シンボル化は進行中です";
+"The current crash file contains no matching UUID information" = "現在のクラッシュファイルには一致する UUID 情報がありません";
+"No usable dSYM matched (import on the right or configure auto-discovery directories)" = "使用可能な dSYM が一致しません（右側でインポート、または自動ディスカバリのディレクトリ設定）";
+"Resolve stack symbols using the matched dSYMs" = "一致した dSYM を使用してスタックのシンボルを解決";
+
+"Symbolicate" = "シンボル化";
+"No symbols found" = "シンボルが見つかりません";
+
+"Manual" = "手動";
+"Auto" = "自動";
+"Auto-match available" = "自動で一致可能";
+"Missing" = "欠落";
+
+"Open .ips / .crash files" = ".ips / .crash ファイルを開く";
+"Rescan the authorized dSYM search directories in Settings" = "設定で認可済みの dSYM 検索ディレクトリを再スキャン";
+"Re-match UUIDs for this crash using the current index/imported dSYMs (no index rebuild)" = "このクラッシュの UUID を現在のインデックス/インポート済み dSYMs で再マッチ（インデックス再構築なし）";
+
+"Please select matching dSYMs for the target Mach-O first, then click to resolve addresses into symbols" = "対象の Mach-O に対して一致する dSYM を先に選択し、クリックしてアドレスをシンボルに解決してください";
+"Use the selected dSYMs to resolve stack addresses into function names and line numbers" = "選択した dSYM を使用して、スタックのアドレスを関数名と行番号に解決します";
+
+"Select dSYM for missing UUIDs…" = "不足している UUID の dSYM を選択…";
+"Re-match" = "再マッチ";
+
+"Show system images" = "システムイメージを表示";
+
+"Open New File" = "新規ファイルを開く";
+"Export Report" = "レポートをエクスポート";
+"Rescan" = "再スキャン";
+"Backtrace" = "バックトレース";
+
+"Import Crash Report" = "クラッシュレポートをインポート";
+"Drag and drop .ips or .crash files to start forensic analysis." = "フォレンジック解析を開始するには、.ips または .crash ファイルをドラッグ＆ドロップしてください。";
+"Click to upload or drag files here" = "ここをクリックしてアップロードするか、ファイルをドラッグ＆ドロップしてください";
+"Parsing kernel dump file…" = "カーネルダンプファイルを解析中…";
+
+"%d dSYMs" = "%d 個の dSYMs";
+"Parsed %d Mach-O images. Select a dSYM for each image." = "%d 個の Mach-O イメージを解析しました。各イメージに対して dSYM を選択してください。";
+"Mach-O Architectures: %@" = "Mach-O アーキテクチャ：%@";
+"Top Frame：%@" = "先頭フレーム：%@";
+
+"dSYM actions" = "dSYM の操作";
+"Add dSYM Discovery directories: choose a recommended directory or a custom directory (manual authorization required)." = "dSYM Discovery のディレクトリを追加：おすすめディレクトリまたはカスタムディレクトリを選択（手動で認可が必要）";
+"View dSYM details" = "dSYM の詳細を表示";
+
+"Crashed" = "クラッシュ";
+"Main" = "メイン";
+"Queue: %@" = "キュー：%@";
+

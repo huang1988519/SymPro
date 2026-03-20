@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D9B77A162F6A9CB100663939 /* DWARF in Frameworks */ = {isa = PBXBuildFile; productRef = D9B77A152F6A9CB100663939 /* DWARF */; };
+		D9B77A182F6A9CB100663939 /* DWARFSymbolication in Frameworks */ = {isa = PBXBuildFile; productRef = D9B77A172F6A9CB100663939 /* DWARFSymbolication */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		D907E8282F690463000CAA7B /* SymPro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SymPro.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +28,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D9B77A162F6A9CB100663939 /* DWARF in Frameworks */,
+				D9B77A182F6A9CB100663939 /* DWARFSymbolication in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,6 +40,7 @@
 			isa = PBXGroup;
 			children = (
 				D907E82A2F690463000CAA7B /* SymPro */,
+				D9B77A142F6A9CB100663939 /* Frameworks */,
 				D907E8292F690463000CAA7B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +51,13 @@
 				D907E8282F690463000CAA7B /* SymPro.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		D9B77A142F6A9CB100663939 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -65,6 +80,8 @@
 			);
 			name = SymPro;
 			packageProductDependencies = (
+				D9B77A152F6A9CB100663939 /* DWARF */,
+				D9B77A172F6A9CB100663939 /* DWARFSymbolication */,
 			);
 			productName = SymPro;
 			productReference = D907E8282F690463000CAA7B /* SymPro.app */;
@@ -90,10 +107,20 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				"zh-Hans",
+				"zh-Hant",
+				ja,
+				ko,
+				th,
+				vi,
+				id,
 				Base,
 			);
 			mainGroup = D907E81F2F690463000CAA7B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D9B77A132F6A9BFA00663939 /* XCLocalSwiftPackageReference "Packages/swift-dwarf" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D907E8292F690463000CAA7B /* Products */;
 			projectDirPath = "";
@@ -248,22 +275,40 @@
 		D907E8342F690464000CAA7B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-mac";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 4572X223TR;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				EXCLUDED_SOURCE_FILE_NAMES = (
+					"Packages/swift-dwarf/*",
+					"*/swift-dwarf/*",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Crash Analyzer Pro";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hwh.SymPro;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -280,22 +325,40 @@
 		D907E8352F690464000CAA7B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-mac";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 4572X223TR;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				EXCLUDED_SOURCE_FILE_NAMES = (
+					"Packages/swift-dwarf/*",
+					"*/swift-dwarf/*",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Crash Analyzer Pro";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hwh.SymPro;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -331,6 +394,26 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		D9B77A132F6A9BFA00663939 /* XCLocalSwiftPackageReference "Packages/swift-dwarf" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "Packages/swift-dwarf";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D9B77A152F6A9CB100663939 /* DWARF */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D9B77A132F6A9BFA00663939 /* XCLocalSwiftPackageReference "Packages/swift-dwarf" */;
+			productName = DWARF;
+		};
+		D9B77A172F6A9CB100663939 /* DWARFSymbolication */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D9B77A132F6A9BFA00663939 /* XCLocalSwiftPackageReference "Packages/swift-dwarf" */;
+			productName = DWARFSymbolication;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D907E8202F690463000CAA7B /* Project object */;
 }

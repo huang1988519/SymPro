@@ -1,0 +1,124 @@
+"Preparing scan…" = "準備掃描…";
+"Spotlight scanning .dSYMs…" = "Spotlight 正在掃描 dSYMs…";
+"Not scanned" = "未掃描";
+"Scan failed: %@" = "掃描失敗：%@";
+"Indexed %d UUIDs (updated %d this scan)" = "已建立索引：%d 個 UUID（本次掃描更新 %d 條）";
+
+"Select Crash Logs" = "選擇崩潰日誌";
+"Select dSYMs or .xcarchive" = "選擇 dSYMs 或 .xcarchive";
+"Select dSYM for %@" = "為 %@ 選擇 dSYM";
+
+"Search" = "搜尋";
+"Copy" = "複製";
+"Raw Log" = "原始日誌";
+
+"LIBRARY" = "庫";
+"SYMBOL / INSTRUCTION" = "符號 / 指令";
+
+"Auto dSYM Discovery Directories" = "用於自動發現 dSYM 的索引目錄";
+
+"sidebar.noData" = "未載入崩潰資料";
+"sidebar.threads.title" = "執行緒";
+"sidebar.thread.crashed" = "已崩潰";
+"Thread %d" = "執行緒 %d";
+
+"Version:" = "版本：";
+"OS:" = "作業系統：";
+"Exception:" = "例外：";
+
+"Authorization Directory" = "授權目錄";
+"Choose directories for dSYM Discovery (manual confirmation required)" = "選擇用於 dSYM Discovery 的目錄（需要手動確認）";
+"Authorize" = "授權";
+"Choose directories for dSYM Auto Discovery" = "選擇用於 dSYM 自動發現的目錄";
+
+"(Matched)" = "（匹配）";
+"(Unmatched)" = "（不匹配）";
+
+"Showing %d / %d" = "顯示 %d / %d";
+"dSYM Mach-O UUID: %@ %@" = "dSYM Mach-O UUID: %@ %@";
+
+"DWARF file size: %@" = "DWARF 檔案大小：%@";
+"DWARF file size: -" = "DWARF 檔案大小：-";
+
+"Last modified: %@" = "最後修改：%@";
+"Last modified: -" = "最後修改：-";
+
+"Swift-dwarf session: Openable (arch=%@, slice=%@)" = "Swift-dwarf 會話：可開啟（arch=%@，slice=%@）";
+"Swift-dwarf session: Failed to open: %@" = "Swift-dwarf 會話：無法開啟：%@";
+
+"Invalid address format: %@" = "無效的位址格式：%@";
+"(No function name)" = "（無函數名）";
+"(No file line number)" = "（無檔案行號）";
+
+"Detected %@." = "已偵測到 %@。";
+"Crash type: %@" = "當機類型：%@";
+
+"Cancelled" = "已取消";
+"No matching dSYM found" = "找不到匹配的 dSYM";
+"Invalid address" = "無效位址";
+"dSYM UUID does not match the crash image UUID.\n\nPlease make sure you selected dSYMs from the same build (the UUID must match).\n\n%@" = "dSYM UUID 與崩潰映像 UUID 不相符。\n\n請確認你選擇的是同一次建置產物的 dSYM（UUID 必須一致）。\n\n%@";
+"Failed to symbolicate any frames from the dSYM.\n\n%@" = "未能從 dSYM 符號化任何框架。\n\n%@";
+
+"No __DWARF found (may not be a usable dSYM)" = "未發現 __DWARF（可能不是可用的 dSYM）";
+"Symbolication available: function name + file line number" = "可符號化：函數名 + 檔案行號";
+"Symbolication available: function name (missing line table)" = "可符號化：函數名（缺少行號表）";
+"Incomplete DWARF information" = "不完整的 DWARF 資訊";
+
+"UUID Matching: -" = "UUID 匹配：-";
+"UUID Matching: Match" = "UUID 匹配：符合";
+"UUID Matching: %d/%d" = "UUID 匹配：%d/%d";
+
+"Symbolication: Running" = "符號化：進行中";
+"Symbolication: Failed" = "符號化：失敗";
+"Symbolication: Done" = "符號化：完成";
+"Symbolication: -" = "符號化：-";
+
+"Please open a crash file first" = "請先開啟崩潰檔案";
+"Symbolication in progress" = "符號化進行中";
+"The current crash file contains no matching UUID information" = "目前崩潰檔案不包含可匹配的 UUID 資訊";
+"No usable dSYM matched (import on the right or configure auto-discovery directories)" = "未找到可用的 dSYM（請在右側匯入或設定自動發現目錄）";
+"Resolve stack symbols using the matched dSYMs" = "使用已匹配的 dSYMs 解析堆疊符號";
+
+"Symbolicate" = "符號化";
+"No symbols found" = "找不到符號";
+
+"Manual" = "手動";
+"Auto" = "自動";
+"Auto-match available" = "可自動匹配";
+"Missing" = "缺失";
+
+"Open .ips / .crash files" = "開啟 .ips / .crash 檔案";
+"Rescan the authorized dSYM search directories in Settings" = "在設定中重新掃描已授權的 dSYM 搜尋目錄";
+"Re-match UUIDs for this crash using the current index/imported dSYMs (no index rebuild)" = "使用目前索引/匯入的 dSYMs 重新匹配此崩潰的 UUID（不重建索引）";
+
+"Please select matching dSYMs for the target Mach-O first, then click to resolve addresses into symbols" = "請先為目標 Mach-O 選擇匹配的 dSYMs，然後點擊以將位址解析為符號";
+"Use the selected dSYMs to resolve stack addresses into function names and line numbers" = "使用已選擇的 dSYMs 將堆疊位址解析為函數名與行號";
+
+"Select dSYM for missing UUIDs…" = "為遺失的 UUID 選擇 dSYM…";
+"Re-match" = "重新比對";
+
+"Show system images" = "顯示系統鏡像";
+
+"Open New File" = "開啟新檔案";
+"Export Report" = "匯出報告";
+"Rescan" = "重新掃描";
+"Backtrace" = "回溯";
+
+"Import Crash Report" = "匯入崩潰日誌";
+"Drag and drop .ips or .crash files to start forensic analysis." = "拖曳 .ips 或 .crash 檔案以開始取證分析。";
+"Click to upload or drag files here" = "點擊上傳或將檔案拖曳到這裡";
+"Parsing kernel dump file…" = "正在解析內核轉儲檔案…";
+
+"%d dSYMs" = "%d 個 dSYMs";
+"Parsed %d Mach-O images. Select a dSYM for each image." = "已解析 %d 個 Mach-O 映像。為每個映像選擇一個 dSYM。";
+"Mach-O Architectures: %@" = "Mach-O 架構：%@";
+"Top Frame：%@" = "頂部幀：%@";
+
+"dSYM actions" = "dSYM 操作";
+"Add dSYM Discovery directories: choose a recommended directory or a custom directory (manual authorization required)." = "新增 dSYM Discovery 目錄：選擇推薦目錄或自訂目錄（需要手動授權）。";
+"View dSYM details" = "查看 dSYM 詳細資料";
+
+"Crashed" = "已崩潰";
+"Main" = "主執行緒";
+"Queue: %@" = "佇列：%@";
+

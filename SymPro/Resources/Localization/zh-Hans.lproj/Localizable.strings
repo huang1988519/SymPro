@@ -1,0 +1,124 @@
+"Preparing scan…" = "准备扫描…";
+"Spotlight scanning .dSYMs…" = "Spotlight 正在扫描 dSYMs…";
+"Not scanned" = "未扫描";
+"Scan failed: %@" = "扫描失败：%@";
+"Indexed %d UUIDs (updated %d this scan)" = "已建立索引：%d 个 UUID（本次扫描更新 %d 条）";
+
+"Select Crash Logs" = "选择崩溃日志";
+"Select dSYMs or .xcarchive" = "选择 dSYMs 或 .xcarchive";
+"Select dSYM for %@" = "为 %@ 选择 dSYM";
+
+"Search" = "搜索";
+"Copy" = "复制";
+"Raw Log" = "原始日志";
+
+"LIBRARY" = "库";
+"SYMBOL / INSTRUCTION" = "符号 / 指令";
+
+"Auto dSYM Discovery Directories" = "用于自动发现 dSYM 的索引目录";
+
+"sidebar.noData" = "未加载崩溃数据";
+"sidebar.threads.title" = "线程";
+"sidebar.thread.crashed" = "崩溃";
+"Thread %d" = "线程 %d";
+
+"Version:" = "版本：";
+"OS:" = "操作系统：";
+"Exception:" = "异常：";
+
+"Authorization Directory" = "授权目录";
+"Choose directories for dSYM Discovery (manual confirmation required)" = "选择用于 dSYM Discovery 的目录（需要手动确认）";
+"Authorize" = "授权";
+"Choose directories for dSYM Auto Discovery" = "选择用于 dSYM 自动发现的目录";
+
+"(Matched)" = "（匹配）";
+"(Unmatched)" = "（不匹配）";
+
+"Showing %d / %d" = "显示 %d / %d";
+"dSYM Mach-O UUID: %@ %@" = "dSYM Mach-O UUID: %@ %@";
+
+"DWARF file size: %@" = "DWARF 文件大小：%@";
+"DWARF file size: -" = "DWARF 文件大小：-";
+
+"Last modified: %@" = "修改时间：%@";
+"Last modified: -" = "修改时间：-";
+
+"Swift-dwarf session: Openable (arch=%@, slice=%@)" = "Swift-dwarf 会话：可打开（arch=%@，slice=%@）";
+"Swift-dwarf session: Failed to open: %@" = "Swift-dwarf 会话：打开失败：%@";
+
+"Invalid address format: %@" = "无效地址格式：%@";
+"(No function name)" = "（无函数名）";
+"(No file line number)" = "（无文件行号）";
+
+"Detected %@." = "检测到 %@。";
+"Crash type: %@" = "崩溃类型：%@";
+
+"Cancelled" = "已取消";
+"No matching dSYM found" = "未找到匹配的 dSYM";
+"Invalid address" = "无效地址";
+"dSYM UUID does not match the crash image UUID.\n\nPlease make sure you selected dSYMs from the same build (the UUID must match).\n\n%@" = "dSYM UUID 与崩溃镜像 UUID 不匹配。\n\n请确认你选择的是同一次构建产物的 dSYM（UUID 必须一致）。\n\n%@";
+"Failed to symbolicate any frames from the dSYM.\n\n%@" = "未能从 dSYM 符号化任何帧。\n\n%@";
+
+"No __DWARF found (may not be a usable dSYM)" = "未发现 __DWARF（可能不是可用的 dSYM）";
+"Symbolication available: function name + file line number" = "可符号化：函数名 + 文件行号";
+"Symbolication available: function name (missing line table)" = "可符号化：函数名（缺少行号表）";
+"Incomplete DWARF information" = "DWARF 信息不完整";
+
+"UUID Matching: -" = "UUID 匹配：-";
+"UUID Matching: Match" = "UUID 匹配：匹配";
+"UUID Matching: %d/%d" = "UUID 匹配：%d/%d";
+
+"Symbolication: Running" = "符号化：进行中";
+"Symbolication: Failed" = "符号化：失败";
+"Symbolication: Done" = "符号化：完成";
+"Symbolication: -" = "符号化：-";
+
+"Please open a crash file first" = "请先打开崩溃文件";
+"Symbolication in progress" = "符号化进行中";
+"The current crash file contains no matching UUID information" = "当前崩溃文件不包含可匹配的 UUID 信息";
+"No usable dSYM matched (import on the right or configure auto-discovery directories)" = "未找到可用的 dSYM（请在右侧导入或配置自动发现目录）";
+"Resolve stack symbols using the matched dSYMs" = "使用已匹配的 dSYMs 解析堆栈符号";
+
+"Symbolicate" = "符号化";
+"No symbols found" = "未找到符号";
+
+"Manual" = "手动";
+"Auto" = "自动";
+"Auto-match available" = "可自动匹配";
+"Missing" = "缺失";
+
+"Open .ips / .crash files" = "打开 .ips / .crash 文件";
+"Rescan the authorized dSYM search directories in Settings" = "在设置中重新扫描已授权的 dSYM 搜索目录";
+"Re-match UUIDs for this crash using the current index/imported dSYMs (no index rebuild)" = "使用当前索引/导入的 dSYMs 重新匹配此崩溃的 UUID（不重建索引）";
+
+"Please select matching dSYMs for the target Mach-O first, then click to resolve addresses into symbols" = "请先为目标 Mach-O 选择匹配的 dSYMs，然后点击以将地址解析为符号";
+"Use the selected dSYMs to resolve stack addresses into function names and line numbers" = "使用已选择的 dSYMs 将堆栈地址解析为函数名与行号";
+
+"Select dSYM for missing UUIDs…" = "为缺失 UUID 选择 dSYM…";
+"Re-match" = "重新匹配";
+
+"Show system images" = "显示系统镜像";
+
+"Open New File" = "打开新文件";
+"Export Report" = "导出报告";
+"Rescan" = "重新扫描";
+"Backtrace" = "回溯";
+
+"Import Crash Report" = "导入崩溃报告";
+"Drag and drop .ips or .crash files to start forensic analysis." = "拖拽 .ips 或 .crash 文件以开始取证分析。";
+"Click to upload or drag files here" = "点击上传或将文件拖到这里";
+"Parsing kernel dump file…" = "正在解析内核转储文件…";
+
+"%d dSYMs" = "%d 个 dSYMs";
+"Parsed %d Mach-O images. Select a dSYM for each image." = "已解析 %d 个 Mach-O 镜像。为每个镜像选择一个 dSYM。";
+"Mach-O Architectures: %@" = "Mach-O 架构：%@";
+"Top Frame：%@" = "顶部帧：%@";
+
+"dSYM actions" = "dSYM 操作";
+"Add dSYM Discovery directories: choose a recommended directory or a custom directory (manual authorization required)." = "添加 dSYM Discovery 目录：选择推荐目录或自定义目录（需要手动授权）。";
+"View dSYM details" = "查看 dSYM 详情";
+
+"Crashed" = "崩溃";
+"Main" = "主线程";
+"Queue: %@" = "队列：%@";
+

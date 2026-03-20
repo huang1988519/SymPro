@@ -1,0 +1,124 @@
+"Preparing scan…" = "Menyiapkan pemindaian…";
+"Spotlight scanning .dSYMs…" = "Memindai dSYMs dengan Spotlight…";
+"Not scanned" = "Belum dipindai";
+"Scan failed: %@" = "Pemindaian gagal: %@";
+"Indexed %d UUIDs (updated %d this scan)" = "Indeks dibuat: %d UUID (diperbarui %d pada pemindaian ini)";
+
+"Select Crash Logs" = "Pilih log crash";
+"Select dSYMs or .xcarchive" = "Pilih dSYMs atau .xcarchive";
+"Select dSYM for %@" = "Pilih dSYM untuk %@";
+
+"Search" = "Cari";
+"Copy" = "Salin";
+"Raw Log" = "Log mentah";
+
+"LIBRARY" = "Pustaka";
+"SYMBOL / INSTRUCTION" = "Simbol / Instruksi";
+
+"Auto dSYM Discovery Directories" = "Direktori penemuan dSYM otomatis";
+
+"sidebar.noData" = "Tidak ada data crash";
+"sidebar.threads.title" = "Thread";
+"sidebar.thread.crashed" = "Crash";
+"Thread %d" = "Thread %d";
+
+"Version:" = "Versi:";
+"OS:" = "OS:";
+"Exception:" = "Pengecualian:";
+
+"Authorization Directory" = "Authorization Directory";
+"Choose directories for dSYM Discovery (manual confirmation required)" = "Choose directories for dSYM Discovery (manual confirmation required)";
+"Authorize" = "Authorize";
+"Choose directories for dSYM Auto Discovery" = "Choose directories for dSYM Auto Discovery";
+
+"(Matched)" = "(Matched)";
+"(Unmatched)" = "(Unmatched)";
+
+"Showing %d / %d" = "Showing %d / %d";
+"dSYM Mach-O UUID: %@ %@" = "dSYM Mach-O UUID: %@ %@";
+
+"DWARF file size: %@" = "DWARF file size: %@";
+"DWARF file size: -" = "DWARF file size: -";
+
+"Last modified: %@" = "Last modified: %@";
+"Last modified: -" = "Last modified: -";
+
+"Swift-dwarf session: Openable (arch=%@, slice=%@)" = "Swift-dwarf session: Openable (arch=%@, slice=%@)";
+"Swift-dwarf session: Failed to open: %@" = "Swift-dwarf session: Failed to open: %@";
+
+"Invalid address format: %@" = "Invalid address format: %@";
+"(No function name)" = "(No function name)";
+"(No file line number)" = "(No file line number)";
+
+"Detected %@." = "Detected %@.";
+"Crash type: %@" = "Crash type: %@";
+
+"Cancelled" = "Cancelled";
+"No matching dSYM found" = "No matching dSYM found";
+"Invalid address" = "Invalid address";
+"dSYM UUID does not match the crash image UUID.\n\nPlease make sure you selected dSYMs from the same build (the UUID must match).\n\n%@" = "dSYM UUID does not match the crash image UUID.\n\nPlease make sure you selected dSYMs from the same build (the UUID must match).\n\n%@";
+"Failed to symbolicate any frames from the dSYM.\n\n%@" = "Failed to symbolicate any frames from the dSYM.\n\n%@";
+
+"No __DWARF found (may not be a usable dSYM)" = "No __DWARF found (may not be a usable dSYM)";
+"Symbolication available: function name + file line number" = "Symbolication available: function name + file line number";
+"Symbolication available: function name (missing line table)" = "Symbolication available: function name (missing line table)";
+"Incomplete DWARF information" = "Incomplete DWARF information";
+
+"UUID Matching: -" = "UUID Matching: -";
+"UUID Matching: Match" = "UUID Matching: Match";
+"UUID Matching: %d/%d" = "UUID Matching: %d/%d";
+
+"Symbolication: Running" = "Symbolication: Running";
+"Symbolication: Failed" = "Symbolication: Failed";
+"Symbolication: Done" = "Symbolication: Done";
+"Symbolication: -" = "Symbolication: -";
+
+"Please open a crash file first" = "Please open a crash file first";
+"Symbolication in progress" = "Symbolication in progress";
+"The current crash file contains no matching UUID information" = "The current crash file contains no matching UUID information";
+"No usable dSYM matched (import on the right or configure auto-discovery directories)" = "No usable dSYM matched (import on the right or configure auto-discovery directories)";
+"Resolve stack symbols using the matched dSYMs" = "Resolve stack symbols using the matched dSYMs";
+
+"Symbolicate" = "Simbolisasi";
+"No symbols found" = "Tidak menemukan simbol";
+
+"Manual" = "Manual";
+"Auto" = "Otomatis";
+"Auto-match available" = "Tersedia auto-match";
+"Missing" = "Hilang";
+
+"Open .ips / .crash files" = "Open .ips / .crash files";
+"Rescan the authorized dSYM search directories in Settings" = "Rescan the authorized dSYM search directories in Settings";
+"Re-match UUIDs for this crash using the current index/imported dSYMs (no index rebuild)" = "Re-match UUIDs for this crash using the current index/imported dSYMs (no index rebuild)";
+
+"Please select matching dSYMs for the target Mach-O first, then click to resolve addresses into symbols" = "Please select matching dSYMs for the target Mach-O first, then click to resolve addresses into symbols";
+"Use the selected dSYMs to resolve stack addresses into function names and line numbers" = "Use the selected dSYMs to resolve stack addresses into function names and line numbers";
+
+"Select dSYM for missing UUIDs…" = "Pilih dSYM untuk UUID yang hilang…";
+"Re-match" = "Cocokkan ulang";
+
+"Show system images" = "Tampilkan gambar sistem";
+
+"Open New File" = "Buka File Baru";
+"Export Report" = "Ekspor Laporan";
+"Rescan" = "Pindai Ulang";
+"Backtrace" = "Backtrace";
+
+"Import Crash Report" = "Impor laporan crash";
+"Drag and drop .ips or .crash files to start forensic analysis." = "Seret dan lepas file .ips atau .crash untuk memulai analisis forensik.";
+"Click to upload or drag files here" = "Klik untuk mengunggah atau seret file ke sini";
+"Parsing kernel dump file…" = "Sedang memproses file kernel dump…";
+
+"%d dSYMs" = "%d dSYMs";
+"Parsed %d Mach-O images. Select a dSYM for each image." = "Parsed %d Mach-O images. Select a dSYM for each image.";
+"Mach-O Architectures: %@" = "Mach-O Architectures: %@";
+"Top Frame：%@" = "Top Frame：%@";
+
+"dSYM actions" = "dSYM actions";
+"Add dSYM Discovery directories: choose a recommended directory or a custom directory (manual authorization required)." = "Add dSYM Discovery directories: choose a recommended directory or a custom directory (manual authorization required).";
+"View dSYM details" = "View dSYM details";
+
+"Crashed" = "Crashed";
+"Main" = "Main";
+"Queue: %@" = "Queue: %@";
+

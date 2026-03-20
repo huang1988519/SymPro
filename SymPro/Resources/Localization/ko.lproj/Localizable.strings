@@ -1,0 +1,124 @@
+"Preparing scan…" = "스캔 준비 중…";
+"Spotlight scanning .dSYMs…" = "Spotlight에서 dSYMs를 스캔 중…";
+"Not scanned" = "스캔하지 않음";
+"Scan failed: %@" = "스캔 실패: %@";
+"Indexed %d UUIDs (updated %d this scan)" = "인덱싱 완료: %d개의 UUID (이번 스캔에서 %d개 업데이트)";
+
+"Select Crash Logs" = "크래시 로그 선택";
+"Select dSYMs or .xcarchive" = "dSYMs 또는 .xcarchive 선택";
+"Select dSYM for %@" = "%@의 dSYM 선택";
+
+"Search" = "검색";
+"Copy" = "복사";
+"Raw Log" = "원시 로그";
+
+"LIBRARY" = "라이브러리";
+"SYMBOL / INSTRUCTION" = "심볼 / 명령";
+
+"Auto dSYM Discovery Directories" = "자동 dSYM 검색 디렉토리";
+
+"sidebar.noData" = "충돌 데이터가 없습니다";
+"sidebar.threads.title" = "스레드";
+"sidebar.thread.crashed" = "충돌";
+"Thread %d" = "%d 스레드";
+
+"Version:" = "버전：";
+"OS:" = "OS：";
+"Exception:" = "예외：";
+
+"Authorization Directory" = "권한 디렉터리";
+"Choose directories for dSYM Discovery (manual confirmation required)" = "dSYM Discovery용 디렉터리를 선택하세요(수동 확인 필요)";
+"Authorize" = "권한 부여";
+"Choose directories for dSYM Auto Discovery" = "dSYM 자동 검색용 디렉터리 선택";
+
+"(Matched)" = "(일치)";
+"(Unmatched)" = "(불일치)";
+
+"Showing %d / %d" = "%d / %d 표시";
+"dSYM Mach-O UUID: %@ %@" = "dSYM Mach-O UUID: %@ %@";
+
+"DWARF file size: %@" = "DWARF 파일 크기: %@";
+"DWARF file size: -" = "DWARF 파일 크기: -";
+
+"Last modified: %@" = "마지막 수정: %@";
+"Last modified: -" = "마지막 수정: -";
+
+"Swift-dwarf session: Openable (arch=%@, slice=%@)" = "Swift-dwarf 세션: 열 수 있음 (arch=%@, slice=%@)";
+"Swift-dwarf session: Failed to open: %@" = "Swift-dwarf 세션: 열기 실패: %@";
+
+"Invalid address format: %@" = "잘못된 주소 형식: %@";
+"(No function name)" = "(함수 이름 없음)";
+"(No file line number)" = "(파일 행 번호 없음)";
+
+"Detected %@." = "%@을(를) 감지했습니다.";
+"Crash type: %@" = "충돌 유형: %@";
+
+"Cancelled" = "취소됨";
+"No matching dSYM found" = "일치하는 dSYM을 찾을 수 없습니다";
+"Invalid address" = "잘못된 주소";
+"dSYM UUID does not match the crash image UUID.\n\nPlease make sure you selected dSYMs from the same build (the UUID must match).\n\n%@" = "dSYM UUID가 충돌 이미지 UUID와 일치하지 않습니다.\n\n같은 빌드에서 dSYM을 선택했는지 확인하세요(UUID는 반드시 일치해야 합니다).\n\n%@";
+"Failed to symbolicate any frames from the dSYM.\n\n%@" = "dSYM에서 어떤 프레임도 심볼화하지 못했습니다.\n\n%@";
+
+"No __DWARF found (may not be a usable dSYM)" = "__DWARF를 찾지 못했습니다(사용 가능한 dSYM이 아닐 수 있습니다)";
+"Symbolication available: function name + file line number" = "심볼화 가능: 함수 이름 + 파일 행 번호";
+"Symbolication available: function name (missing line table)" = "심볼화 가능: 함수 이름(라인 테이블 없음)";
+"Incomplete DWARF information" = "불완전한 DWARF 정보";
+
+"UUID Matching: -" = "UUID 매칭: -";
+"UUID Matching: Match" = "UUID 매칭: 일치";
+"UUID Matching: %d/%d" = "UUID 매칭: %d/%d";
+
+"Symbolication: Running" = "심볼화: 실행 중";
+"Symbolication: Failed" = "심볼화: 실패";
+"Symbolication: Done" = "심볼화: 완료";
+"Symbolication: -" = "심볼화: -";
+
+"Please open a crash file first" = "먼저 충돌 파일을 여세요";
+"Symbolication in progress" = "심볼화 진행 중";
+"The current crash file contains no matching UUID information" = "현재 충돌 파일에 일치하는 UUID 정보가 없습니다";
+"No usable dSYM matched (import on the right or configure auto-discovery directories)" = "사용 가능한 dSYM이 일치하지 않았습니다(오른쪽에서 가져오거나 자동 검색 디렉터리를 설정하세요)";
+"Resolve stack symbols using the matched dSYMs" = "일치하는 dSYMs로 스택 심볼을 해석";
+
+"Symbolicate" = "심볼화";
+"No symbols found" = "심볼을 찾을 수 없습니다";
+
+"Manual" = "수동";
+"Auto" = "자동";
+"Auto-match available" = "자동 매칭 가능";
+"Missing" = "없음";
+
+"Open .ips / .crash files" = ".ips / .crash 파일 열기";
+"Rescan the authorized dSYM search directories in Settings" = "설정에서 권한이 부여된 dSYM 검색 디렉터리를 다시 스캔";
+"Re-match UUIDs for this crash using the current index/imported dSYMs (no index rebuild)" = "현재 인덱스/가져온 dSYMs로 이 충돌의 UUID를 다시 매칭(인덱스 재구성 없음)";
+
+"Please select matching dSYMs for the target Mach-O first, then click to resolve addresses into symbols" = "대상 Mach-O에 대해 일치하는 dSYMs를 먼저 선택한 다음 클릭하여 주소를 심볼로 해석하세요";
+"Use the selected dSYMs to resolve stack addresses into function names and line numbers" = "선택한 dSYMs로 스택 주소를 함수 이름과 행 번호로 해석";
+
+"Select dSYM for missing UUIDs…" = "누락된 UUID용 dSYM 선택…";
+"Re-match" = "다시 매칭";
+
+"Show system images" = "시스템 이미지 표시";
+
+"Open New File" = "새 파일 열기";
+"Export Report" = "보고서 내보내기";
+"Rescan" = "다시 스캔";
+"Backtrace" = "백트레이스";
+
+"Import Crash Report" = "크래시 보고서 가져오기";
+"Drag and drop .ips or .crash files to start forensic analysis." = "포렌식 분석을 시작하려면 .ips 또는 .crash 파일을 드래그 앤 드롭하세요.";
+"Click to upload or drag files here" = "여기를 클릭해 업로드하거나 파일을 여기에 드래그하세요";
+"Parsing kernel dump file…" = "커널 덤프 파일을 분석하는 중…";
+
+"%d dSYMs" = "%d개의 dSYMs";
+"Parsed %d Mach-O images. Select a dSYM for each image." = "총 %d개의 Mach-O 이미지를 파싱했습니다. 각 이미지에 대해 dSYM을 선택하세요.";
+"Mach-O Architectures: %@" = "Mach-O 아키텍처: %@";
+"Top Frame：%@" = "상단 프레임：%@";
+
+"dSYM actions" = "dSYM 작업";
+"Add dSYM Discovery directories: choose a recommended directory or a custom directory (manual authorization required)." = "dSYM Discovery 디렉터리 추가: 추천 디렉터리 또는 사용자 지정 디렉터리를 선택(수동 승인 필요)";
+"View dSYM details" = "dSYM 세부 정보 보기";
+
+"Crashed" = "충돌";
+"Main" = "메인";
+"Queue: %@" = "큐：%@";
+
