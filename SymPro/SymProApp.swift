@@ -8,14 +8,36 @@
 import SwiftUI
 import DWARFSymbolication
 import DWARF
+import UserNotifications
+#if os(macOS)
+import AppKit
+#endif
 
 
 extension Notification.Name {
     static let symProOpenRecentFile = Notification.Name("SymPro.openRecentFile")
+    static let symProOpenAIInsight = Notification.Name("SymPro.openAIInsight")
+}
+
+private final class SymProAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        UNUserNotificationCenter.current().delegate = self
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        guard response.notification.request.identifier == "sympro.ai.analysis.ready" else { return }
+        #if os(macOS)
+        await MainActor.run {
+            NSApp.activate(ignoringOtherApps: true)
+            NotificationCenter.default.post(name: .symProOpenAIInsight, object: nil)
+        }
+        #endif
+    }
 }
 
 @main
 struct SymProApp: App {
+    @NSApplicationDelegateAdaptor(SymProAppDelegate.self) private var appDelegate
     @StateObject private var workspaceState = SymbolicateWorkspaceState()
     @ObservedObject private var settings = SettingsStore.shared
     @ObservedObject private var recentStore = RecentCrashLogStore.shared
@@ -24,10 +46,6 @@ struct SymProApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(workspaceState)
-                .preferredColorScheme(settings.appearanceMode.preferredColorScheme)
-        }
-        Settings {
-            SettingsView()
                 .preferredColorScheme(settings.appearanceMode.preferredColorScheme)
         }
         .commands {
@@ -70,5 +88,14 @@ struct SymProApp: App {
                 }
             }
         }
+
+        Settings {
+            SettingsView()
+                .preferredColorScheme(settings.appearanceMode.preferredColorScheme)
+        }
+        #if os(macOS)
+        .defaultSize(width: 460, height: 420)
+        .windowResizability(.contentSize)
+        #endif
     }
 }

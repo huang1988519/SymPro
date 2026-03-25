@@ -3,6 +3,7 @@ import SwiftUI
 struct CrashAnalyzerLeftSidebarView: View {
     let model: CrashReportModel?
     @Binding var selectedThreadIndex: Int
+    @State private var showCrashReasonPopover: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -48,7 +49,35 @@ struct CrashAnalyzerLeftSidebarView: View {
             VStack(alignment: .leading, spacing: 6) {
                 infoRow(key: L10n.t("Version:"), value: model.overview.version)
                 infoRow(key: L10n.t("OS:"), value: model.overview.osVersion)
-                infoRow(key: L10n.t("Exception:"), value: model.overview.exceptionType)
+                HStack(spacing: 6) {
+                    Text(L10n.t("Exception:"))
+                        .foregroundStyle(Color.secondary)
+                        .frame(width: 70, alignment: .leading)
+                    Text(model.overview.exceptionType.isEmpty ? "-" : model.overview.exceptionType)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Button {
+                        showCrashReasonPopover = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.secondary)
+                    .help(L10n.t("About this crash type"))
+                    .popover(isPresented: $showCrashReasonPopover, arrowEdge: .bottom) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(L10n.t("Possible cause for this crash type"))
+                                .font(.system(size: 12, weight: .semibold))
+                            Text(crashReasonText(for: model.overview.exceptionType))
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(12)
+                        .frame(width: 320, alignment: .leading)
+                    }
+                }
             }
             .font(.system(size: 11, design: .monospaced))
             .foregroundStyle(Color.secondary)
@@ -64,6 +93,26 @@ struct CrashAnalyzerLeftSidebarView: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
+    }
+
+    private func crashReasonText(for exceptionType: String) -> String {
+        let t = exceptionType.uppercased()
+        if t.contains("EXC_BAD_ACCESS") {
+            return L10n.t("Crash reason: EXC_BAD_ACCESS")
+        }
+        if t.contains("EXC_BREAKPOINT") || t.contains("SIGTRAP") {
+            return L10n.t("Crash reason: EXC_BREAKPOINT")
+        }
+        if t.contains("SIGABRT") || t.contains("EXC_CRASH") {
+            return L10n.t("Crash reason: SIGABRT")
+        }
+        if t.contains("SIGKILL") {
+            return L10n.t("Crash reason: SIGKILL")
+        }
+        if t.contains("WATCHDOG") {
+            return L10n.t("Crash reason: Watchdog")
+        }
+        return L10n.t("Crash reason: Unknown")
     }
 
     private func threadsSection(model: CrashReportModel) -> some View {

@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct CrashAnalyzerBacktraceView: View {
     let model: CrashReportModel?
@@ -54,6 +57,11 @@ struct CrashAnalyzerBacktraceView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .help(symbolHelp(for: f))
+                    .contextMenu {
+                        Button(L10n.t("Copy")) {
+                            copyToPasteboard(symbolText(for: f))
+                        }
+                    }
                     .padding(5)
             }
         }
@@ -91,6 +99,13 @@ struct CrashAnalyzerBacktraceView: View {
             parts.append("Source: \(file):\(line)")
         }
         return parts.joined(separator: "\n")
+    }
+
+    private func copyToPasteboard(_ text: String) {
+        #if os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        #endif
     }
 
     private enum ImageKind {

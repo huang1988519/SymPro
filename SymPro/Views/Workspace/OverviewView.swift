@@ -63,7 +63,7 @@ struct OverviewView: View {
                     Button {
                         state.startSymbolication()
                     } label: {
-                            Label("Symbolicate", systemImage: "play.fill")
+                        Label("Symbolicate", systemImage: "play.fill")
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)

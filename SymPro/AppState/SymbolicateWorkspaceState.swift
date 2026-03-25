@@ -22,10 +22,15 @@ final class SymbolicateWorkspaceState: NSObject, ObservableObject {
     @Published var symbolicationErrorKind: SymbolicationError.Kind?
     @Published var symbolicatedText: String = ""
     @Published var isLoadingCrashLog: Bool = false
+    @Published var showManualSymbolicateSheet: Bool = false
+    @Published var aiAnalysisText: String = ""
+    @Published var aiAnalysisError: String?
+    @Published var isAnalyzingCrashWithAI: Bool = false
 
     private let symbolicationService = SymbolicationService()
     private var symbolicationTask: Task<Void, Never>?
     private var openCrashLogTask: Task<Void, Never>?
+    private var aiAnalysisTask: Task<Void, Never>?
     private var cancellables: Set<AnyCancellable> = []
     private var lastAutoScanCrashID: UUID? = nil
 
@@ -56,6 +61,10 @@ final class SymbolicateWorkspaceState: NSObject, ObservableObject {
         symbolicationErrorKind = nil
         isSymbolicating = false
         isLoadingCrashLog = false
+        aiAnalysisTask?.cancel()
+        aiAnalysisText = ""
+        aiAnalysisError = nil
+        isAnalyzingCrashWithAI = false
         selectedDSYMByImageUUID = [:]
         manualDSYMOverrideByImageUUID = [:]
         // 保留 dsymItems 与 discovery 索引，避免每次重开窗口都需要重新导入/扫描
@@ -137,6 +146,10 @@ final class SymbolicateWorkspaceState: NSObject, ObservableObject {
                 self.symbolicationErrorKind = nil
                 self.selectedDSYMByImageUUID = [:]
                 self.manualDSYMOverrideByImageUUID = [:]
+                self.aiAnalysisTask?.cancel()
+                self.aiAnalysisText = ""
+                self.aiAnalysisError = nil
+                self.isAnalyzingCrashWithAI = false
                 self.refreshDSYMMatchState()
                 self.recomputeResolvedDSYMSelection()
                 self.lastAutoScanCrashID = crash.id
@@ -368,4 +381,365 @@ final class SymbolicateWorkspaceState: NSObject, ObservableObject {
             try? content.write(to: url, atomically: true, encoding: .utf8)
         }
     }
+
+    @MainActor
+    func requestAIAnalysis() {
+        guard let crash = crashLog else {
+            aiAnalysisError = L10n.t("Please open a crash file first")
+            return
+        }
+
+        let settings = SettingsStore.shared
+        let model = settings.llmModel.trimmingCharacters(in: .whitespacesAndNewlines)
+        let baseURL = settings.llmBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !model.isEmpty, !baseURL.isEmpty else {
+            aiAnalysisError = L10n.t("Please configure LLM provider in Settings first.")
+            return
+        }
+        guard let endpoint = chatCompletionsEndpointURL(from: baseURL) else {
+            aiAnalysisError = L10n.t("Invalid URL.")
+            return
+        }
+
+        aiAnalysisTask?.cancel()
+        isAnalyzingCrashWithAI = true
+        aiAnalysisError = nil
+
+        let input = symbolicatedText.isEmpty ? crash.rawText : symbolicatedText
+        let prompt = buildAIPrompt(crash: crash, reportText: input)
+        let headerName = settings.llmResolvedAPIKeyHeaderName()
+        let key = (settings.llmAPIKey() ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        aiAnalysisTask = Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            do {
+                let firstTry = try await self.performChatCompletionRequest(
+                    endpoint: endpoint,
+                    model: model,
+                    prompt: prompt,
+                    apiKey: key,
+                    headerName: headerName
+                )
+
+                var finalData = firstTry.data
+                var finalHTTP = firstTry.http
+                if finalHTTP.statusCode == 401, !key.isEmpty, headerName.caseInsensitiveCompare("Authorization") != .orderedSame {
+                    let retry = try await self.performChatCompletionRequest(
+                        endpoint: endpoint,
+                        model: model,
+                        prompt: prompt,
+                        apiKey: key,
+                        headerName: "Authorization"
+                    )
+                    finalData = retry.data
+                    finalHTTP = retry.http
+                }
+
+                guard (200 ... 299).contains(finalHTTP.statusCode) else {
+                    let body = String(data: finalData, encoding: .utf8) ?? ""
+                    let msg = body.isEmpty ? L10n.tFormat("Request failed (%d).", finalHTTP.statusCode) : body
+                    await MainActor.run {
+                        self.isAnalyzingCrashWithAI = false
+                        self.aiAnalysisError = msg
+                    }
+                    return
+                }
+
+                let decoded = try JSONDecoder().decode(OpenAIChatCompletionResponse.self, from: finalData)
+                let finalText = decoded.choices.first?.message.content.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                await MainActor.run {
+                    self.isAnalyzingCrashWithAI = false
+                    if finalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        self.aiAnalysisError = L10n.t("No analysis returned.")
+                    } else if !self.matchesAIReportTemplate(finalText) {
+                        self.aiAnalysisError = L10n.t("AI response did not match required template. Please retry.")
+                    } else {
+                        self.aiAnalysisText = finalText
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.isAnalyzingCrashWithAI = false
+                    self.aiAnalysisError = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func buildAIPrompt(crash: CrashLog, reportText: String) -> String {
+        let maxLen = 16000
+        let clipped = reportText.count > maxLen ? String(reportText.prefix(maxLen)) : reportText
+        let t = aiReportTemplate()
+        return """
+        \(t.roleLine)
+        \(t.taskLine)
+
+        \(t.formatTitle)
+        \(t.formatRuleLine)
+
+        \(t.headings[0])
+        ...
+
+        \(t.headings[1])
+        ...
+
+        \(t.headings[2])
+        ...
+
+        \(t.headings[3])
+        1.
+        2.
+        3.
+
+        \(t.headings[4])
+        ...
+
+        \(t.headings[5])
+        ...
+
+        \(t.headings[6])
+        ...
+
+        \(t.constraintsTitle)
+        - \(t.languageRule)
+        - \(t.outputOnlyRule)
+        - \(t.insufficientRule)
+        - \(t.topReasonRule)
+
+        \(t.fileLabel): \(crash.fileName)
+        \(t.processLabel): \(crash.processName ?? "-")
+
+        \(t.reportLabel):
+        \(clipped)
+        """
+    }
+
+    private func matchesAIReportTemplate(_ text: String) -> Bool {
+        let requiredBlocks = aiReportTemplate().headings
+        guard requiredBlocks.allSatisfy({ text.contains($0) }) else { return false }
+        guard text.contains("1."), text.contains("2."), text.contains("3.") else { return false }
+        return true
+    }
+
+    private func aiReportTemplate() -> (
+        roleLine: String,
+        taskLine: String,
+        formatTitle: String,
+        formatRuleLine: String,
+        headings: [String],
+        constraintsTitle: String,
+        languageRule: String,
+        outputOnlyRule: String,
+        insufficientRule: String,
+        topReasonRule: String,
+        fileLabel: String,
+        processLabel: String,
+        reportLabel: String
+    ) {
+        let lang = Bundle.main.preferredLocalizations.first ?? "en"
+        if lang.hasPrefix("zh-Hans") || lang == "zh-Hans" || lang == "zh" {
+            return (
+                roleLine: "你是资深 iOS 崩溃分析工程师。",
+                taskLine: "请基于崩溃报告输出诊断结论。",
+                formatTitle: "【输出格式要求（必须遵守）】",
+                formatRuleLine: "请严格按照以下结构输出，不得增删标题，不得改写标题名：",
+                headings: ["【崩溃类型】", "【崩溃位置】", "【关键信息】", "【最可能原因（按概率排序）】", "【影响范围】", "【修复建议】", "【一句话总结】"],
+                constraintsTitle: "【额外约束】",
+                languageRule: "只用简体中文。",
+                outputOnlyRule: "仅输出以上模板内容，不要输出任何额外说明、前后缀、Markdown 代码块。",
+                insufficientRule: "如果信息不足，在对应项写“信息不足”。",
+                topReasonRule: "“最可能原因”必须保留 1/2/3 三条。",
+                fileLabel: "文件名",
+                processLabel: "进程",
+                reportLabel: "报告内容"
+            )
+        }
+        if lang.hasPrefix("zh-Hant") {
+            return (
+                roleLine: "你是資深 iOS 崩潰分析工程師。",
+                taskLine: "請基於崩潰報告輸出診斷結論。",
+                formatTitle: "【輸出格式要求（必須遵守）】",
+                formatRuleLine: "請嚴格按照以下結構輸出，不得增刪標題，不得改寫標題名：",
+                headings: ["【崩潰類型】", "【崩潰位置】", "【關鍵資訊】", "【最可能原因（按概率排序）】", "【影響範圍】", "【修復建議】", "【一句話總結】"],
+                constraintsTitle: "【額外約束】",
+                languageRule: "只用繁體中文。",
+                outputOnlyRule: "僅輸出以上模板內容，不要輸出任何額外說明、前後綴、Markdown 代碼塊。",
+                insufficientRule: "如果資訊不足，在對應項寫「資訊不足」。",
+                topReasonRule: "「最可能原因」必須保留 1/2/3 三條。",
+                fileLabel: "檔名",
+                processLabel: "進程",
+                reportLabel: "報告內容"
+            )
+        }
+        if lang.hasPrefix("ja") {
+            return (
+                roleLine: "あなたはシニア iOS クラッシュ解析エンジニアです。",
+                taskLine: "クラッシュレポートに基づいて診断結果を出力してください。",
+                formatTitle: "[Output Format Requirements (Must Follow)]",
+                formatRuleLine: "Use exactly this structure and keep all headings unchanged:",
+                headings: ["[Crash Type]", "[Crash Location]", "[Key Information]", "[Most Likely Causes (Ranked)]", "[Impact Scope]", "[Fix Suggestions]", "[One-line Summary]"],
+                constraintsTitle: "[Additional Constraints]",
+                languageRule: "Respond in Japanese only.",
+                outputOnlyRule: "Output only the template content above. No extra notes/prefix/suffix/markdown code blocks.",
+                insufficientRule: "If information is insufficient, write \"Insufficient information\" in that section.",
+                topReasonRule: "\"Most Likely Causes\" must keep items 1/2/3.",
+                fileLabel: "File",
+                processLabel: "Process",
+                reportLabel: "Report Content"
+            )
+        }
+        if lang.hasPrefix("ko") {
+            return (
+                roleLine: "당신은 시니어 iOS 크래시 분석 엔지니어입니다.",
+                taskLine: "크래시 리포트를 기반으로 진단 결과를 출력하세요.",
+                formatTitle: "[Output Format Requirements (Must Follow)]",
+                formatRuleLine: "Use exactly this structure and keep all headings unchanged:",
+                headings: ["[Crash Type]", "[Crash Location]", "[Key Information]", "[Most Likely Causes (Ranked)]", "[Impact Scope]", "[Fix Suggestions]", "[One-line Summary]"],
+                constraintsTitle: "[Additional Constraints]",
+                languageRule: "Respond in Korean only.",
+                outputOnlyRule: "Output only the template content above. No extra notes/prefix/suffix/markdown code blocks.",
+                insufficientRule: "If information is insufficient, write \"Insufficient information\" in that section.",
+                topReasonRule: "\"Most Likely Causes\" must keep items 1/2/3.",
+                fileLabel: "File",
+                processLabel: "Process",
+                reportLabel: "Report Content"
+            )
+        }
+        if lang.hasPrefix("th") {
+            return (
+                roleLine: "You are a senior iOS crash analysis engineer.",
+                taskLine: "Generate a diagnosis based on the crash report.",
+                formatTitle: "[Output Format Requirements (Must Follow)]",
+                formatRuleLine: "Use exactly this structure and keep all headings unchanged:",
+                headings: ["[Crash Type]", "[Crash Location]", "[Key Information]", "[Most Likely Causes (Ranked)]", "[Impact Scope]", "[Fix Suggestions]", "[One-line Summary]"],
+                constraintsTitle: "[Additional Constraints]",
+                languageRule: "Respond in Thai only.",
+                outputOnlyRule: "Output only the template content above. No extra notes/prefix/suffix/markdown code blocks.",
+                insufficientRule: "If information is insufficient, write \"Insufficient information\" in that section.",
+                topReasonRule: "\"Most Likely Causes\" must keep items 1/2/3.",
+                fileLabel: "File",
+                processLabel: "Process",
+                reportLabel: "Report Content"
+            )
+        }
+        if lang.hasPrefix("vi") {
+            return (
+                roleLine: "You are a senior iOS crash analysis engineer.",
+                taskLine: "Generate a diagnosis based on the crash report.",
+                formatTitle: "[Output Format Requirements (Must Follow)]",
+                formatRuleLine: "Use exactly this structure and keep all headings unchanged:",
+                headings: ["[Crash Type]", "[Crash Location]", "[Key Information]", "[Most Likely Causes (Ranked)]", "[Impact Scope]", "[Fix Suggestions]", "[One-line Summary]"],
+                constraintsTitle: "[Additional Constraints]",
+                languageRule: "Respond in Vietnamese only.",
+                outputOnlyRule: "Output only the template content above. No extra notes/prefix/suffix/markdown code blocks.",
+                insufficientRule: "If information is insufficient, write \"Insufficient information\" in that section.",
+                topReasonRule: "\"Most Likely Causes\" must keep items 1/2/3.",
+                fileLabel: "File",
+                processLabel: "Process",
+                reportLabel: "Report Content"
+            )
+        }
+        if lang.hasPrefix("id") {
+            return (
+                roleLine: "You are a senior iOS crash analysis engineer.",
+                taskLine: "Generate a diagnosis based on the crash report.",
+                formatTitle: "[Output Format Requirements (Must Follow)]",
+                formatRuleLine: "Use exactly this structure and keep all headings unchanged:",
+                headings: ["[Crash Type]", "[Crash Location]", "[Key Information]", "[Most Likely Causes (Ranked)]", "[Impact Scope]", "[Fix Suggestions]", "[One-line Summary]"],
+                constraintsTitle: "[Additional Constraints]",
+                languageRule: "Respond in Indonesian only.",
+                outputOnlyRule: "Output only the template content above. No extra notes/prefix/suffix/markdown code blocks.",
+                insufficientRule: "If information is insufficient, write \"Insufficient information\" in that section.",
+                topReasonRule: "\"Most Likely Causes\" must keep items 1/2/3.",
+                fileLabel: "File",
+                processLabel: "Process",
+                reportLabel: "Report Content"
+            )
+        }
+        return (
+            roleLine: "You are a senior iOS crash analysis engineer.",
+            taskLine: "Generate a diagnosis based on the crash report.",
+            formatTitle: "[Output Format Requirements (Must Follow)]",
+            formatRuleLine: "Use exactly this structure and keep all headings unchanged:",
+            headings: ["[Crash Type]", "[Crash Location]", "[Key Information]", "[Most Likely Causes (Ranked)]", "[Impact Scope]", "[Fix Suggestions]", "[One-line Summary]"],
+            constraintsTitle: "[Additional Constraints]",
+            languageRule: "Respond in the app language.",
+            outputOnlyRule: "Output only the template content above. No extra notes/prefix/suffix/markdown code blocks.",
+            insufficientRule: "If information is insufficient, write \"Insufficient information\" in that section.",
+            topReasonRule: "\"Most Likely Causes\" must keep items 1/2/3.",
+            fileLabel: "File",
+            processLabel: "Process",
+            reportLabel: "Report Content"
+        )
+    }
+
+    private func chatCompletionsEndpointURL(from baseURLString: String) -> URL? {
+        guard var comps = URLComponents(string: baseURLString) else { return nil }
+        let path = comps.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        if path.isEmpty {
+            comps.path = "/chat/completions"
+        } else if path.hasSuffix("chat/completions") {
+            comps.path = "/" + path
+        } else {
+            comps.path = "/" + path + "/chat/completions"
+        }
+        comps.query = nil
+        comps.fragment = nil
+        return comps.url
+    }
+
+    private func performChatCompletionRequest(
+        endpoint: URL,
+        model: String,
+        prompt: String,
+        apiKey: String,
+        headerName: String
+    ) async throws -> (data: Data, http: HTTPURLResponse) {
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 60
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if !apiKey.isEmpty {
+            if headerName.caseInsensitiveCompare("Authorization") == .orderedSame {
+                request.setValue("Bearer \(apiKey)", forHTTPHeaderField: headerName)
+            } else {
+                request.setValue(apiKey, forHTTPHeaderField: headerName)
+            }
+        }
+        let payload = OpenAIChatCompletionRequest(
+            model: model,
+            messages: [
+                .init(role: "system", content: "You are a senior iOS crash triage assistant."),
+                .init(role: "user", content: prompt)
+            ],
+            temperature: 0.1
+        )
+        request.httpBody = try JSONEncoder().encode(payload)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+        return (data, http)
+    }
+}
+
+private struct OpenAIChatCompletionRequest: Encodable {
+    struct Message: Encodable {
+        let role: String
+        let content: String
+    }
+    let model: String
+    let messages: [Message]
+    let temperature: Double
+}
+
+private struct OpenAIChatCompletionResponse: Decodable {
+    struct Choice: Decodable {
+        struct Message: Decodable {
+            let content: String
+        }
+        let message: Message
+    }
+    let choices: [Choice]
 }

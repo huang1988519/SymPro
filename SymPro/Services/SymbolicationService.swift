@@ -18,7 +18,20 @@ final class SymbolicationService {
 
     private func normalizeUUIDString(_ s: String?) -> String? {
         guard let s, !s.isEmpty else { return nil }
-        return UUID(uuidString: s)?.uuidString
+        let trimmed = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let u = UUID(uuidString: trimmed) { return u.uuidString }
+
+        // 兼容 iOS 导出/三方导出：有些 uuid 可能是 32 位纯 hex（无短横线）。
+        let compact = trimmed.replacingOccurrences(of: "-", with: "").uppercased()
+        guard compact.count == 32, compact.allSatisfy({ $0.isHexDigit }) else { return nil }
+
+        let formatted =
+            "\(compact.prefix(8))-" +
+            "\(compact.dropFirst(8).prefix(4))-" +
+            "\(compact.dropFirst(12).prefix(4))-" +
+            "\(compact.dropFirst(16).prefix(4))-" +
+            "\(compact.suffix(12))"
+        return UUID(uuidString: formatted)?.uuidString ?? formatted
     }
 
     private func fmtHex(_ n: UInt64) -> String {
@@ -176,13 +189,14 @@ final class SymbolicationService {
         }
 
         let rest = lines.dropFirst().joined(separator: "\n")
-        guard let reportData = rest.data(using: .utf8),
-              var report = (try? JSONSerialization.jsonObject(with: reportData)) as? [String: Any]
-        else {
-            log("skip: not ips JSON (report parse failed). returning rawText")
-            return .success(Output(text: crashLog.rawText, model: crashLog.model))
+        var report: [String: Any]? = nil
+        if let reportData = rest.data(using: .utf8),
+           let parsed = (try? JSONSerialization.jsonObject(with: reportData)) as? [String: Any] {
+            report = parsed
+            log("ips JSON parsed: metadataKeys=\(metadata.count), reportKeys=\(parsed.count)")
+        } else {
+            log("skip: not ips JSON (report parse failed). will try text-based symbolication from model")
         }
-        log("ips JSON parsed: metadataKeys=\(metadata.count), reportKeys=\(report.count)")
 
         // 建立 UUID -> dSYM DWARF binary path 的快速映射，并缓存 DWARFSession
         // 支持输入：
@@ -236,144 +250,267 @@ final class SymbolicationService {
         defer { sessions.values.forEach { $0.close() } }
         var textVMAddrByUUID: [String: UInt64] = [:]
 
-        // 走 ips 的结构：threads + usedImages
-        guard var threads = report["threads"] as? [[String: Any]],
-              let usedImages = report["usedImages"] as? [[String: Any]]
-        else {
-            // 不是 ips 结构，直接返回原文
-            log("skip: report missing threads/usedImages. returning rawText")
-            return .success(Output(text: crashLog.rawText, model: crashLog.model))
-        }
-        log("report arrays: threads=\(threads.count), usedImages=\(usedImages.count)")
+        // 走两条路：
+        // 1) structured JSON：threads + usedImages（现有逻辑）
+        // 2) 文本 Translated Report：threads/usedImages 不在 JSON 里，则基于 crashLog.model + binaryImages 做符号化兜底
+        if var jsonReport = report,
+           let threads = jsonReport["threads"] as? [[String: Any]],
+           let usedImages = jsonReport["usedImages"] as? [[String: Any]] {
 
-        // UUID 命中检查：usedImages 里的 Mach-O UUID 与已导入 dSYM 的 Mach-O UUID 是否有交集
-        let crashUUIDs: [String] = usedImages.compactMap { normalizeUUIDString($0["uuid"] as? String) }
-        let crashUUIDSet = Set(crashUUIDs)
-        let dsymUUIDSet = Set(dwarfBinaryByUUID.keys)
-        let hit = crashUUIDSet.intersection(dsymUUIDSet)
-        log("uuid check: crashImages=\(crashUUIDSet.count) dsymMapped=\(dsymUUIDSet.count) hit=\(hit.count)")
-        if hit.isEmpty {
-            let sampleCrash = crashUUIDs.prefix(5).joined(separator: ", ")
-            let sampleDSYM = dsymUUIDSet.prefix(5).joined(separator: ", ")
-            log("uuid mismatch: crashUUID(sample)=\(sampleCrash)")
-            log("uuid mismatch: dsymUUID(sample)=\(sampleDSYM)")
-            let details = diag.joined(separator: "\n")
-            return .failure(SymbolicationError.uuidMismatch(details: details))
-        }
+            var mutableThreads = threads
+            log("report arrays: threads=\(mutableThreads.count), usedImages=\(usedImages.count)")
 
-        func imageBase(_ imageIndex: Int) -> UInt64 {
-            guard imageIndex >= 0, imageIndex < usedImages.count else { return 0 }
-            return (usedImages[imageIndex]["base"] as? NSNumber)?.uint64Value ?? 0
-        }
+            // UUID 命中检查：usedImages 里的 Mach-O UUID 与已导入 dSYM 的 Mach-O UUID 是否有交集
+            let crashUUIDs: [String] = usedImages.compactMap { normalizeUUIDString($0["uuid"] as? String) }
+            let crashUUIDSet = Set(crashUUIDs)
+            let dsymUUIDSet = Set(dwarfBinaryByUUID.keys)
+            let hit = crashUUIDSet.intersection(dsymUUIDSet)
+            log("uuid check: crashImages=\(crashUUIDSet.count) dsymMapped=\(dsymUUIDSet.count) hit=\(hit.count)")
+            if hit.isEmpty {
+                let sampleCrash = crashUUIDs.prefix(5).joined(separator: ", ")
+                let sampleDSYM = dsymUUIDSet.prefix(5).joined(separator: ", ")
+                log("uuid mismatch: crashUUID(sample)=\(sampleCrash)")
+                log("uuid mismatch: dsymUUID(sample)=\(sampleDSYM)")
+                let details = diag.joined(separator: "\n")
+                return .failure(SymbolicationError.uuidMismatch(details: details))
+            }
 
-        func imageUUID(_ imageIndex: Int) -> String? {
-            guard imageIndex >= 0, imageIndex < usedImages.count else { return nil }
-            let u = usedImages[imageIndex]["uuid"] as? String
-            return normalizeUUIDString(u)
-        }
+            func imageBase(_ imageIndex: Int) -> UInt64 {
+                guard imageIndex >= 0, imageIndex < usedImages.count else { return 0 }
+                return (usedImages[imageIndex]["base"] as? NSNumber)?.uint64Value ?? 0
+            }
 
-        var totalFrames = 0
-        var consideredFrames = 0
-        var symbolicatedFrames = 0
-        var missUUID = 0
-        var missDSYMMap = 0
-        var sessionInitFail = 0
-        var nilSymbolicate = 0
+            func imageUUID(_ imageIndex: Int) -> String? {
+                guard imageIndex >= 0, imageIndex < usedImages.count else { return nil }
+                let u = usedImages[imageIndex]["uuid"] as? String
+                return normalizeUUIDString(u)
+            }
 
-        for tIndex in threads.indices {
-            guard var frames = threads[tIndex]["frames"] as? [[String: Any]] else { continue }
-            for fIndex in frames.indices {
-                totalFrames += 1
-                let imageIndex = frames[fIndex]["imageIndex"] as? Int ?? 0
-                let off = (frames[fIndex]["imageOffset"] as? NSNumber)?.intValue ?? 0
-                let base = imageBase(imageIndex)
-                let pc = base &+ UInt64(off)
+            var totalFrames = 0
+            var consideredFrames = 0
+            var symbolicatedFrames = 0
+            var missUUID = 0
+            var missDSYMMap = 0
+            var sessionInitFail = 0
+            var nilSymbolicate = 0
 
-                guard let uuid = imageUUID(imageIndex) else { missUUID += 1; continue }
-                consideredFrames += 1
-                guard let dwarfPath = dwarfBinaryByUUID[uuid] else { missDSYMMap += 1; continue }
+            for tIndex in mutableThreads.indices {
+                guard var frames = mutableThreads[tIndex]["frames"] as? [[String: Any]] else { continue }
+                for fIndex in frames.indices {
+                    totalFrames += 1
+                    let imageIndex = frames[fIndex]["imageIndex"] as? Int ?? 0
+                    let off = (frames[fIndex]["imageOffset"] as? NSNumber)?.intValue ?? 0
+                    let base = imageBase(imageIndex)
+                    let pc = base &+ UInt64(off)
 
-                let session: DWARFSession
-                if let cached = sessions[uuid] {
-                    session = cached
-                } else {
+                    guard let uuid = imageUUID(imageIndex) else { missUUID += 1; continue }
+                    consideredFrames += 1
+                    guard let dwarfPath = dwarfBinaryByUUID[uuid] else { missDSYMMap += 1; continue }
+
+                    let session: DWARFSession
+                    if let cached = sessions[uuid] {
+                        session = cached
+                    } else {
+                        do {
+                            // 通用：默认 slice=0；如果需要按 arch 精准选择，可后续增强
+                            let s = try DWARFSession(path: dwarfPath)
+                            sessions[uuid] = s
+                            session = s
+                            if let info = try? s.objectInfo() {
+                                log("session open: uuid=\(uuid) arch=\(info.architecture) slice=\(info.universalBinaryIndex)/\(info.universalBinaryCount)")
+                            } else {
+                                log("session open: uuid=\(uuid)")
+                            }
+                            if let vm = readTextVMAddr(fromMachO: URL(fileURLWithPath: dwarfPath)) {
+                                textVMAddrByUUID[uuid] = vm
+                                log("__TEXT vmaddr: uuid=\(uuid) vmaddr=\(fmtHex(vm))")
+                            } else {
+                                log("__TEXT vmaddr: uuid=\(uuid) unreadable (will use runtime pc)")
+                            }
+                        } catch {
+                            sessionInitFail += 1
+                            log("session init failed: uuid=\(uuid) path=\(URL(fileURLWithPath: dwarfPath).lastPathComponent) err=\(error)")
+                            continue
+                        }
+                    }
+
+                    // 尝试用 unslid 地址（text vmaddr + imageOffset）。若取不到 vmaddr，则退回 runtime pc。
+                    let addr: UInt64 = {
+                        if let vm = textVMAddrByUUID[uuid] {
+                            return vm &+ UInt64(off)
+                        }
+                        return pc
+                    }()
+
                     do {
-                        // 通用：默认 slice=0；如果需要按 arch 精准选择，可后续增强
-                        let s = try DWARFSession(path: dwarfPath)
-                        sessions[uuid] = s
-                        session = s
-                        if let info = try? s.objectInfo() {
-                            log("session open: uuid=\(uuid) arch=\(info.architecture) slice=\(info.universalBinaryIndex)/\(info.universalBinaryCount)")
-                        } else {
-                            log("session open: uuid=\(uuid)")
-                        }
-                        if let vm = readTextVMAddr(fromMachO: URL(fileURLWithPath: dwarfPath)) {
-                            textVMAddrByUUID[uuid] = vm
-                            log("__TEXT vmaddr: uuid=\(uuid) vmaddr=\(fmtHex(vm))")
-                        } else {
-                            log("__TEXT vmaddr: uuid=\(uuid) unreadable (will use runtime pc)")
-                        }
-                    } catch {
-                        sessionInitFail += 1
-                        log("session init failed: uuid=\(uuid) path=\(URL(fileURLWithPath: dwarfPath).lastPathComponent) err=\(error)")
-                        continue
-                    }
-                }
-
-                // 尝试用 unslid 地址（text vmaddr + imageOffset）。若取不到 vmaddr，则退回 runtime pc。
-                let addr: UInt64 = {
-                    if let vm = textVMAddrByUUID[uuid] {
-                        return vm &+ UInt64(off)
-                    }
-                    return pc
-                }()
-
-                do {
-                    if let result = try session.symbolicate(address: addr) {
-                        if let fn = result.functionName, !fn.isEmpty {
-                            frames[fIndex]["symbol"] = fn
-                            frames[fIndex]["symbolLocation"] = 0
-                        }
-                        if let file = result.file, !file.isEmpty, let line = result.line {
-                            frames[fIndex]["source"] = [
-                                "file": file,
-                                "line": Int(line)
-                            ]
-                        }
-                        if (result.functionName?.isEmpty == false) || (result.file?.isEmpty == false) {
-                            symbolicatedFrames += 1
+                        if let result = try session.symbolicate(address: addr) {
+                            if let fn = result.functionName, !fn.isEmpty {
+                                frames[fIndex]["symbol"] = fn
+                                frames[fIndex]["symbolLocation"] = 0
+                            }
+                            if let file = result.file, !file.isEmpty, let line = result.line {
+                                frames[fIndex]["source"] = [
+                                    "file": file,
+                                    "line": Int(line)
+                                ]
+                            }
+                            if (result.functionName?.isEmpty == false) || (result.file?.isEmpty == false) {
+                                symbolicatedFrames += 1
+                            } else {
+                                nilSymbolicate += 1
+                            }
                         } else {
                             nilSymbolicate += 1
+                            if nilSymbolicate <= 5 {
+                                log("symbolicate nil: pc=\(fmtHex(pc)) addr=\(fmtHex(addr)) off=\(off) uuid=\(uuid)")
+                            }
+                        }
+                    } catch {
+                        if diag.count < 200 {
+                            log("symbolicate error: pc=\(fmtHex(pc)) addr=\(fmtHex(addr)) off=\(off) uuid=\(uuid) err=\(error)")
                         }
                     }
-                    else {
-                        nilSymbolicate += 1
-                        // 采样少量日志避免刷屏
-                        if nilSymbolicate <= 5 {
-                            log("symbolicate nil: pc=\(fmtHex(pc)) addr=\(fmtHex(addr)) off=\(off) uuid=\(uuid)")
+                }
+                mutableThreads[tIndex]["frames"] = frames
+            }
+
+            jsonReport["threads"] = mutableThreads
+            log("done(JSON): totalFrames=\(totalFrames) considered=\(consideredFrames) symbolicated=\(symbolicatedFrames) missUUID=\(missUUID) missDSYMMap=\(missDSYMMap) sessionInitFail=\(sessionInitFail) nilResult=\(nilSymbolicate)")
+
+            if symbolicatedFrames == 0 {
+                let details = diag.joined(separator: "\n")
+                return .failure(SymbolicationError.noSymbolsFound(details: details))
+            }
+
+            let translated = IPSReportFormatter.translatedReport(metadata: metadata, report: jsonReport) ?? crashLog.rawText
+            let model = CrashReportModel.fromIPS(metadata: metadata, report: jsonReport)
+            return .success(Output(text: translated, model: model))
+        } else {
+            // --- 文本 Translated Report 符号化兜底 ---
+            guard var model = (crashLog.model ?? CrashReportModel.fromTranslatedReportText(crashLog.rawText, processNameFallback: crashLog.processName)) else {
+                log("skip(text): no structured model available. returning rawText")
+                return .success(Output(text: crashLog.rawText, model: crashLog.model))
+            }
+            guard !model.threads.isEmpty else {
+                log("skip(text): no structured model available. returning rawText")
+                return .success(Output(text: crashLog.rawText, model: crashLog.model))
+            }
+
+            // uuidByBase：用 Binary Images（loadAddress）把 frame 的 imageBase 映射到 uuid
+            var uuidByBase: [UInt64: String] = [:]
+            for img in crashLog.binaryImages {
+                guard let u = img.uuid, !u.isEmpty,
+                      let norm = normalizeUUIDString(u) else { continue }
+                uuidByBase[img.loadAddress] = norm
+            }
+            guard !uuidByBase.isEmpty else {
+                log("skip(text): binaryImages uuid mapping is empty. returning rawText")
+                return .success(Output(text: crashLog.rawText, model: crashLog.model))
+            }
+
+            let dsymUUIDSet = Set(dwarfBinaryByUUID.keys)
+            let crashUUIDSet: Set<String> = Set(model.threads.flatMap { t in
+                t.frames.compactMap { f in
+                    guard let base = f.imageBase else { return nil }
+                    return uuidByBase[base]
+                }
+            })
+            let hit = crashUUIDSet.intersection(dsymUUIDSet)
+            log("uuid check(text): crashImages=\(crashUUIDSet.count) dsymMapped=\(dsymUUIDSet.count) hit=\(hit.count)")
+            if hit.isEmpty {
+                let sampleCrash = crashUUIDSet.prefix(5).joined(separator: ", ")
+                let sampleDSYM = dsymUUIDSet.prefix(5).joined(separator: ", ")
+                log("uuid mismatch(text): crashUUID(sample)=\(sampleCrash)")
+                log("uuid mismatch(text): dsymUUID(sample)=\(sampleDSYM)")
+                let details = diag.joined(separator: "\n")
+                return .failure(SymbolicationError.uuidMismatch(details: details))
+            }
+
+            var totalFrames = 0
+            var consideredFrames = 0
+            var symbolicatedFrames = 0
+            var missUUID = 0
+            var missDSYMMap = 0
+            var sessionInitFail = 0
+            var nilSymbolicate = 0
+
+            for tIndex in model.threads.indices {
+                for fIndex in model.threads[tIndex].frames.indices {
+                    totalFrames += 1
+                    let frame = model.threads[tIndex].frames[fIndex]
+                    guard let base = frame.imageBase,
+                          let off = frame.imageOffset else { missUUID += 1; continue }
+
+                    let uuid = uuidByBase[base] ?? ""
+                    guard !uuid.isEmpty else { missUUID += 1; continue }
+                    consideredFrames += 1
+                    guard let dwarfPath = dwarfBinaryByUUID[uuid] else { missDSYMMap += 1; continue }
+
+                    let session: DWARFSession
+                    if let cached = sessions[uuid] {
+                        session = cached
+                    } else {
+                        do {
+                            let s = try DWARFSession(path: dwarfPath)
+                            sessions[uuid] = s
+                            session = s
+                            if let vm = readTextVMAddr(fromMachO: URL(fileURLWithPath: dwarfPath)) {
+                                textVMAddrByUUID[uuid] = vm
+                            }
+                        } catch {
+                            sessionInitFail += 1
+                            log("session init failed(text): uuid=\(uuid) err=\(error)")
+                            continue
                         }
                     }
-                } catch {
-                    if diag.count < 200 {
-                        log("symbolicate error: pc=\(fmtHex(pc)) addr=\(fmtHex(addr)) off=\(off) uuid=\(uuid) err=\(error)")
+
+                    let addr: UInt64 = {
+                        if let vm = textVMAddrByUUID[uuid] {
+                            let uoff = UInt64(max(off, 0))
+                            return vm &+ uoff
+                        }
+                        return frame.address
+                    }()
+
+                    do {
+                        if let result = try session.symbolicate(address: addr) {
+                            if let fn = result.functionName, !fn.isEmpty {
+                                model.threads[tIndex].frames[fIndex].symbol = fn
+                                model.threads[tIndex].frames[fIndex].symbolLocation = 0
+                            }
+                            if let file = result.file, !file.isEmpty, let line = result.line {
+                                model.threads[tIndex].frames[fIndex].sourceFile = file
+                                model.threads[tIndex].frames[fIndex].sourceLine = Int(line)
+                            }
+                            if (result.functionName?.isEmpty == false) || (result.file?.isEmpty == false) {
+                                symbolicatedFrames += 1
+                            } else {
+                                nilSymbolicate += 1
+                            }
+                        } else {
+                            nilSymbolicate += 1
+                            if nilSymbolicate <= 5 {
+                                log("symbolicate nil(text): pc=\(fmtHex(frame.address)) addr=\(fmtHex(addr)) off=\(off) uuid=\(uuid)")
+                            }
+                        }
+                    } catch {
+                        if diag.count < 200 {
+                            log("symbolicate error(text): pc=\(fmtHex(frame.address)) addr=\(fmtHex(addr)) off=\(off) uuid=\(uuid) err=\(error)")
+                        }
                     }
                 }
             }
-            threads[tIndex]["frames"] = frames
+
+            log("done(text): totalFrames=\(totalFrames) considered=\(consideredFrames) symbolicated=\(symbolicatedFrames) missUUID=\(missUUID) missDSYMMap=\(missDSYMMap) sessionInitFail=\(sessionInitFail) nilResult=\(nilSymbolicate)")
+
+            if symbolicatedFrames == 0 {
+                let details = diag.joined(separator: "\n")
+                return .failure(SymbolicationError.noSymbolsFound(details: details))
+            }
+
+            // 文本版不再尝试重排/生成 Translated Report（那需要逐行替换），只返回可用于 UI 的结构化 model。
+            return .success(Output(text: crashLog.rawText, model: model))
         }
-
-        report["threads"] = threads
-        log("done: totalFrames=\(totalFrames) considered=\(consideredFrames) symbolicated=\(symbolicatedFrames) missUUID=\(missUUID) missDSYMMap=\(missDSYMMap) sessionInitFail=\(sessionInitFail) nilResult=\(nilSymbolicate)")
-
-        if symbolicatedFrames == 0 {
-            let details = diag.joined(separator: "\n")
-            return .failure(SymbolicationError.noSymbolsFound(details: details))
-        }
-
-        // 用现有 formatter 生成新的 Translated Report（保持 Apple 崩溃报告格式）
-        let translated = IPSReportFormatter.translatedReport(metadata: metadata, report: report) ?? crashLog.rawText
-        let model = CrashReportModel.fromIPS(metadata: metadata, report: report)
-        return .success(Output(text: translated, model: model))
     }
 
     /// dSYM bundle -> Contents/Resources/DWARF/<binary>

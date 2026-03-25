@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SymPro - Crash Symbolication & Analysis</title>
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --panel: #ffffff;
+      --text: #1d1d1f;
+      --muted: #6e6e73;
+      --line: #e3e3e8;
+      --brand: #0071e3;
+      --brand-dark: #0062c3;
+      --radius: 18px;
+      --shadow: 0 8px 24px rgba(0, 0, 0, .06);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 16px/1.68 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "PingFang SC", sans-serif; color: var(--text); background: var(--bg); }
+    .container { width: min(1060px, calc(100% - 40px)); margin: 0 auto; }
+    .nav {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(245, 245, 247, .86);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav-inner { height: 64px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { font-weight: 600; letter-spacing: 0; }
+    .langbar label { font-size: 12px; color: var(--muted); margin-right: 6px; }
+    .langbar select { font-size: 13px; border: 1px solid #d2d2d7; border-radius: 10px; padding: 6px 10px; background: #fff; }
+    .hero { padding: 56px 0 22px; }
+    .hero-panel {
+      background: linear-gradient(180deg, #ffffff 0%, #fbfbfd 100%);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 54px 46px;
+    }
+    h1 { margin: 0; font-size: clamp(34px, 6vw, 56px); line-height: 1.08; letter-spacing: -.7px; font-weight: 600; }
+    .sub { margin-top: 14px; max-width: 760px; font-size: clamp(17px, 2.3vw, 22px); color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; padding: 18px 0 26px; }
+    .card {
+      grid-column: span 12;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, .03);
+      padding: 28px;
+    }
+    @media (min-width: 900px) {
+      .card.features, .card.usecases { grid-column: span 6; }
+      .card.intro, .card.cta { grid-column: span 12; }
+    }
+    h2 { margin: 0 0 12px; font-size: 31px; line-height: 1.2; letter-spacing: -.3px; font-weight: 600; }
+    p { margin: 8px 0 0; color: #1f2937; }
+    ul { margin: 8px 0 0; padding-left: 20px; }
+    li { margin: 8px 0; color: #1f2937; }
+    .cta { text-align: center; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--brand); color: #fff; border-radius: 12px;
+      padding: 12px 24px; text-decoration: none; font-weight: 500;
+      transition: background .18s ease;
+    }
+    .btn:hover { background: var(--brand-dark); }
+    .muted { color: var(--muted); }
+    .foot { padding: 8px 0 36px; text-align: center; color: #748092; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <div class="container nav-inner">
+      <div class="brand">SymPro</div>
+      <div class="langbar">
+        <label for="langSelect" data-i18n="langLabel">Language</label>
+        <select id="langSelect">
+          <option value="en">English</option>
+          <option value="zh-Hans">简体中文</option>
+          <option value="ja">日本語</option>
+          <option value="ko">한국어</option>
+          <option value="zh-Hant">繁體中文</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <header class="hero">
+    <div class="container">
+      <div class="hero-panel">
+        <h1 data-i18n="heroTitle">SymPro</h1>
+        <div class="sub" data-i18n="heroSub">Import crash logs, symbolicate quickly, and find root causes.</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container grid">
+    <section class="card intro">
+      <h2 data-i18n="sec1Title">A Crash Analysis Tool for iOS/macOS Developers</h2>
+      <p data-i18n="sec1Body">SymPro streamlines your workflow from log import and dSYM matching to symbolication and root-cause triage.</p>
+    </section>
+
+    <section class="card features">
+      <h2 data-i18n="sec2Title">Core Features</h2>
+      <ul>
+        <li data-i18n="f1">Import and parse <code>.ips</code> / <code>.crash</code> files</li>
+        <li data-i18n="f2">Automatic dSYM discovery, UUID matching, and manual selection</li>
+        <li data-i18n="f3">Visualized threads, stack frames, and binary images</li>
+        <li data-i18n="f4">Manual address symbolication (offset supported)</li>
+        <li data-i18n="f5">Optional AI insights (user-configured OpenAI-compatible service)</li>
+      </ul>
+    </section>
+
+    <section class="card usecases">
+      <h2 data-i18n="sec3Title">Use Cases</h2>
+      <ul>
+        <li data-i18n="u1">Daily client-side crash triage</li>
+        <li data-i18n="u2">QA crash attribution and regression verification</li>
+        <li data-i18n="u3">Fast diagnosis for recurring production crashes</li>
+      </ul>
+    </section>
+
+    <section class="card cta">
+      <p class="muted" data-i18n="ctaText">Need technical support?</p>
+      <a class="btn" href="support.html" data-i18n="ctaBtn">Go to Support</a>
+    </section>
+  </main>
+
+  <div class="container"><div class="foot" data-i18n="footer">© SymPro</div></div>
+
+  <script>
+    const i18n = {
+      "en": {
+        langLabel: "Language",
+        heroTitle: "SymPro",
+        heroSub: "Import crash logs, symbolicate quickly, and find root causes.",
+        sec1Title: "A Crash Analysis Tool for iOS/macOS Developers",
+        sec1Body: "SymPro streamlines your workflow from log import and dSYM matching to symbolication and root-cause triage.",
+        sec2Title: "Core Features",
+        f1: "Import and parse <code>.ips</code> / <code>.crash</code> files",
+        f2: "Automatic dSYM discovery, UUID matching, and manual selection",
+        f3: "Visualized threads, stack frames, and binary images",
+        f4: "Manual address symbolication (offset supported)",
+        f5: "Optional AI insights (user-configured OpenAI-compatible service)",
+        sec3Title: "Use Cases",
+        u1: "Daily client-side crash triage",
+        u2: "QA crash attribution and regression verification",
+        u3: "Fast diagnosis for recurring production crashes",
+        ctaText: "Need technical support?",
+        ctaBtn: "Go to Support",
+        footer: "© SymPro"
+      },
+      "zh-Hans": {
+        langLabel: "语言",
+        heroTitle: "SymPro",
+        heroSub: "导入崩溃日志，快速符号化并定位问题。",
+        sec1Title: "为 iOS/macOS 开发者打造的崩溃分析工具",
+        sec1Body: "SymPro 帮你完成从日志导入、dSYM 匹配到符号化定位的完整流程。",
+        sec2Title: "核心能力",
+        f1: "支持 <code>.ips</code> / <code>.crash</code> 文件导入与解析",
+        f2: "dSYM 自动发现、UUID 匹配与手动指定",
+        f3: "线程栈、二进制镜像、关键信息可视化展示",
+        f4: "手动地址符号化（支持 offset）",
+        f5: "可选 AI 解读（用户可配置 OpenAI 兼容服务）",
+        sec3Title: "适用场景",
+        u1: "客户端开发日常排障",
+        u2: "测试团队崩溃归因与回归验证",
+        u3: "线上高频崩溃快速定位",
+        ctaText: "需要技术支持？",
+        ctaBtn: "前往支持页面",
+        footer: "© SymPro"
+      },
+      "ja": {
+        langLabel: "言語",
+        heroTitle: "SymPro",
+        heroSub: "クラッシュログを読み込み、素早くシンボル化して原因を特定。",
+        sec1Title: "iOS/macOS 開発者向けクラッシュ解析ツール",
+        sec1Body: "SymPro はログ取り込みから dSYM マッチング、シンボル化までを効率化します。",
+        sec2Title: "主な機能",
+        f1: "<code>.ips</code> / <code>.crash</code> の取り込みと解析",
+        f2: "dSYM 自動検出、UUID マッチング、手動指定",
+        f3: "スレッド、スタック、バイナリイメージの可視化",
+        f4: "手動アドレスシンボル化（offset 対応）",
+        f5: "任意の AI 解析（OpenAI 互換サービス設定）",
+        sec3Title: "利用シーン",
+        u1: "日常的なクラッシュ調査",
+        u2: "QA のクラッシュ原因分析と回帰確認",
+        u3: "本番環境の高頻度クラッシュの迅速な切り分け",
+        ctaText: "技術サポートが必要ですか？",
+        ctaBtn: "サポートページへ",
+        footer: "© SymPro"
+      },
+      "ko": {
+        langLabel: "언어",
+        heroTitle: "SymPro",
+        heroSub: "크래시 로그를 가져와 빠르게 심볼리케이션하고 원인을 찾으세요.",
+        sec1Title: "iOS/macOS 개발자를 위한 크래시 분석 도구",
+        sec1Body: "SymPro는 로그 가져오기부터 dSYM 매칭, 심볼리케이션까지 흐름을 단순화합니다.",
+        sec2Title: "핵심 기능",
+        f1: "<code>.ips</code> / <code>.crash</code> 파일 가져오기 및 파싱",
+        f2: "dSYM 자동 탐색, UUID 매칭, 수동 지정",
+        f3: "스레드/스택 프레임/바이너리 이미지 시각화",
+        f4: "수동 주소 심볼리케이션(오프셋 지원)",
+        f5: "선택형 AI 인사이트(OpenAI 호환 서비스 설정)",
+        sec3Title: "사용 시나리오",
+        u1: "클라이언트 개발 일상 장애 분석",
+        u2: "QA 크래시 원인 분석 및 회귀 검증",
+        u3: "운영 환경 반복 크래시의 빠른 진단",
+        ctaText: "기술 지원이 필요하신가요?",
+        ctaBtn: "지원 페이지로 이동",
+        footer: "© SymPro"
+      },
+      "zh-Hant": {
+        langLabel: "語言",
+        heroTitle: "SymPro",
+        heroSub: "匯入崩潰日誌，快速符號化並定位問題。",
+        sec1Title: "為 iOS/macOS 開發者打造的崩潰分析工具",
+        sec1Body: "SymPro 協助你完成從日誌匯入、dSYM 比對到符號化定位的完整流程。",
+        sec2Title: "核心能力",
+        f1: "支援 <code>.ips</code> / <code>.crash</code> 檔案匯入與解析",
+        f2: "dSYM 自動發現、UUID 比對與手動指定",
+        f3: "執行緒堆疊、二進位映像與關鍵資訊可視化",
+        f4: "手動地址符號化（支援 offset）",
+        f5: "可選 AI 解讀（可設定 OpenAI 相容服務）",
+        sec3Title: "適用情境",
+        u1: "客戶端開發日常排障",
+        u2: "測試團隊崩潰歸因與回歸驗證",
+        u3: "線上高頻崩潰快速定位",
+        ctaText: "需要技術支援？",
+        ctaBtn: "前往支援頁面",
+        footer: "© SymPro"
+      }
+    };
+
+    function applyLang(lang) {
+      const dict = i18n[lang] || i18n.en;
+      document.documentElement.lang = lang;
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (dict[key] !== undefined) el.innerHTML = dict[key];
+      });
+      const sel = document.getElementById("langSelect");
+      if (sel && sel.value !== lang) sel.value = lang;
+    }
+
+    const select = document.getElementById("langSelect");
+    select.addEventListener("change", (e) => applyLang(e.target.value));
+    applyLang("en");
+  </script>
+</body>
+</html>

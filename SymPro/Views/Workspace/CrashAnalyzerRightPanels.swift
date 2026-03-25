@@ -8,6 +8,7 @@ struct CrashAnalyzerDSYMPanel: View {
     @EnvironmentObject private var state: SymbolicateWorkspaceState
     @ObservedObject private var discovery = DSYMAutoDiscoveryStore.shared
     @State private var dsymInfo: DSYMInfoPresentation?
+    @State private var uuidMismatchAlertMessage: String?
     @State private var showAllMachO: Bool = false
     @State private var discoveryError: String?
     @State private var menuRefreshToken: Int = 0
@@ -33,11 +34,11 @@ struct CrashAnalyzerDSYMPanel: View {
                                 }
                             }
                             if !suggestionsToShow.isEmpty { Divider() }
-                            Button("Custom directory…") {
+                            Button(L10n.t("Custom directory…")) {
                                 addSearchFolderCustom()
                             }
                         } label: {
-                            Label("Add", systemImage: "plus.circle.fill")
+                            Label(L10n.t("Add"), systemImage: "plus.circle.fill")
                         }
                         .menuStyle(.borderlessButton)
                         .help(L10n.t("Add dSYM Discovery directories: choose a recommended directory or a custom directory (manual authorization required)."))
@@ -81,7 +82,6 @@ struct CrashAnalyzerDSYMPanel: View {
 
             if let crash = state.crashLog {
                 let entries = uuidEntries(crash: crash, showAll: showAllMachO)
-                let detailsByUUID = imageDetailsByUUID(crash: crash)
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
                         Toggle(L10n.t("Show system images"), isOn: $showAllMachO)
@@ -97,7 +97,6 @@ struct CrashAnalyzerDSYMPanel: View {
                         LazyVStack(alignment: .leading, spacing: 6) {
                             ForEach(entries) { entry in
                                 let uuid = entry.uuid
-                                let details = detailsByUUID[uuid]
                                 HStack(alignment: .top) {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(entry.name)
@@ -105,36 +104,11 @@ struct CrashAnalyzerDSYMPanel: View {
                                             .foregroundStyle(.primary)
                                             .lineLimit(1)
                                             .truncationMode(.middle)
-                                        if let arch = details?.arch, !arch.isEmpty {
-                                            Text(arch)
-                                                .font(.caption2)
-                                                .foregroundStyle(.secondary)
-                                                .lineLimit(1)
-                                        }
                                         Text(uuid)
                                             .font(.system(size: 10, design: .monospaced))
                                             .foregroundStyle(Color.secondary)
                                             .lineLimit(1)
                                             .truncationMode(.middle)
-                                        if let bundleId = details?.bundleId, !bundleId.isEmpty {
-                                            Text(bundleId)
-                                                .font(.caption2)
-                                                .foregroundStyle(.secondary)
-                                                .lineLimit(1)
-                                                .truncationMode(.middle)
-                                        }
-                                        if let size = details?.size, size > 0 {
-                                            Text(ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file))
-                                                .font(.caption2)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                        if let path = details?.path, !path.isEmpty {
-                                            Text(path)
-                                                .font(.caption2)
-                                                .foregroundStyle(.secondary)
-                                                .lineLimit(1)
-                                                .truncationMode(.middle)
-                                        }
                                     }
                                     Spacer(minLength: 8)
                                     if let selected = state.selectedDSYMByImageUUID[uuid] {
@@ -147,6 +121,14 @@ struct CrashAnalyzerDSYMPanel: View {
                                                 .background((isManual ? Color.accentColor : Color.green).opacity(0.18))
                                                 .foregroundStyle(isManual ? Color.accentColor : Color.primary)
                                                 .clipShape(Capsule())
+
+                                            if !entry.isSystem {
+                                                Button(L10n.t("Select dSYM…")) {
+                                                    pickAndValidateDSYM(forImageUUID: uuid, imageName: entry.name)
+                                                }
+                                                .buttonStyle(.plain)
+                                                .font(.caption)
+                                            }
 
                                             Button {
                                                 dsymInfo = DSYMInfoPresentation(
@@ -165,14 +147,22 @@ struct CrashAnalyzerDSYMPanel: View {
                                         }
                                     } else if !entry.isSystem {
                                         let discovered = discovery.resolveDSYMURL(forUUID: uuid)?.url
-                                        let label = discovered != nil ? L10n.t("Auto-match available") : L10n.t("Missing")
-                                        Text(label)
-                                            .font(.caption2.weight(.semibold))
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 3)
-                                            .background(Color.secondary.opacity(0.12))
-                                            .foregroundStyle(.secondary)
-                                            .clipShape(Capsule())
+                                        HStack(spacing: 6) {
+                                            let label = discovered != nil ? L10n.t("Auto-match available") : L10n.t("Missing")
+                                            Text(label)
+                                                .font(.caption2.weight(.semibold))
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 3)
+                                                .background(Color.secondary.opacity(0.12))
+                                                .foregroundStyle(.secondary)
+                                                .clipShape(Capsule())
+
+                                            Button(L10n.t("Select dSYM…")) {
+                                                pickAndValidateDSYM(forImageUUID: uuid, imageName: entry.name)
+                                            }
+                                            .buttonStyle(.plain)
+                                            .font(.caption)
+                                        }
                                     }
                                 }
                                 Divider()
@@ -183,17 +173,6 @@ struct CrashAnalyzerDSYMPanel: View {
 //                    .frame(maxHeight: 200)
 
                     HStack(spacing: 8) {
-                        Button(L10n.t("Select dSYM for missing UUIDs…")) {
-                            if let missing = crash.uuidList.first(where: { state.selectedDSYMByImageUUID[$0] == nil }) {
-                                state.pickDSYM(forImageUUID: missing)
-                            } else {
-                                state.pickDSYM()
-                            }
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .disabled(crash.uuidList.isEmpty)
-
                         Button(L10n.t("Re-match")) {
                             state.recomputeResolvedDSYMSelection()
                         }
@@ -215,6 +194,21 @@ struct CrashAnalyzerDSYMPanel: View {
         .sheet(item: $dsymInfo) { info in
             DSYMInfoSheet(info: info)
         }
+        .sheet(isPresented: $state.showManualSymbolicateSheet) {
+            ManualSymbolicateSheet()
+        }
+        .alert(L10n.t("UUID mismatch"), isPresented: Binding(
+            get: { uuidMismatchAlertMessage != nil },
+            set: { newValue in
+                if !newValue { uuidMismatchAlertMessage = nil }
+            }
+        )) {
+            Button(L10n.t("Done")) {
+                uuidMismatchAlertMessage = nil
+            }
+        } message: {
+            Text(uuidMismatchAlertMessage ?? "")
+        }
     }
 
     private func imageNameByUUID(crash: CrashLog) -> [String: String] {
@@ -232,24 +226,6 @@ struct CrashAnalyzerDSYMPanel: View {
             guard let uuid = img.uuid, !uuid.isEmpty else { return nil }
             let name = img.name.isEmpty ? "Unknown Image" : img.name
             return (uuid, name)
-        }
-        return Dictionary(pairs, uniquingKeysWith: { first, _ in first })
-    }
-
-    private func imageDetailsByUUID(crash: CrashLog) -> [String: (arch: String?, bundleId: String?, size: UInt64?, path: String?)] {
-        // Prefer structured .ips image data (best match with ImagesView).
-        if let model = state.symbolicatedModel ?? crash.model {
-            let pairs = model.images.compactMap { img -> (String, (String?, String?, UInt64?, String?))? in
-                guard let u = img.uuid, !u.isEmpty else { return nil }
-                return (u, (img.arch, img.bundleId, img.size, img.path))
-            }
-            return Dictionary(pairs, uniquingKeysWith: { first, _ in first })
-        }
-
-        // Fallback for legacy parsed .crash: only arch is available.
-        let pairs = crash.binaryImages.compactMap { img -> (String, (String?, String?, UInt64?, String?))? in
-            guard let u = img.uuid, !u.isEmpty else { return nil }
-            return (u, (img.architecture, nil, nil, nil))
         }
         return Dictionary(pairs, uniquingKeysWith: { first, _ in first })
     }
@@ -298,6 +274,333 @@ struct CrashAnalyzerDSYMPanel: View {
             return true
         }
         return false
+    }
+
+    private func pickAndValidateDSYM(forImageUUID uuid: String, imageName: String) {
+        #if os(macOS)
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = true
+        panel.treatsFilePackagesAsDirectories = true
+        panel.title = L10n.tFormat("Select dSYM for %@", imageName)
+        if panel.runModal() == .OK, let url = panel.url {
+            let selectedUUID = DSYMUUIDResolver.resolveUUID(at: url)?.uuidString
+            guard let selectedUUID else {
+                uuidMismatchAlertMessage = L10n.t("Cannot read UUID from selected dSYM.")
+                return
+            }
+            guard selectedUUID == uuid else {
+                uuidMismatchAlertMessage = L10n.tFormat(
+                    "Selected dSYM UUID (%@) does not match binary UUID (%@).",
+                    selectedUUID,
+                    uuid
+                )
+                return
+            }
+            state.assignSelectedDSYM(forImageUUID: uuid, url: url)
+        }
+        #endif
+    }
+}
+
+private struct ManualSymbolicateSheet: View {
+    @ObservedObject private var discovery = DSYMAutoDiscoveryStore.shared
+    @EnvironmentObject private var state: SymbolicateWorkspaceState
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var selectedUUID: String = ""
+    @State private var lastCommittedUUID: String = ""
+    @State private var selectedDSYMURL: URL?
+    @State private var manualSelectedDisplayName: String = ""
+    @State private var selectedDisplayUUID: String = ""
+    @State private var manualHex: String = ""
+    @State private var manualOffset: String = ""
+    @State private var useOffset: Bool = true
+    @State private var isResolving: Bool = false
+    @State private var resultText: String = ""
+    @State private var errorText: String = ""
+    @State private var invalidDSYMAlertMessage: String?
+    @State private var manualOption: (uuid: String, displayName: String, url: URL)?
+
+    private let browsePickerTag = "__browse_dsym__"
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            GroupBox(L10n.t("dSYM")) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Picker(L10n.t("Indexed dSYM"), selection: $selectedUUID) {
+                        Text(L10n.t("Browse…")).tag(browsePickerTag)
+                        Divider()
+                        Text(L10n.t("Not selected")).tag("")
+                        ForEach(mergedOptions, id: \.uuid) { option in
+                            Text(option.displayName).tag(option.uuid)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .onChange(of: selectedUUID) { newValue in
+                        if newValue == browsePickerTag {
+                            selectedUUID = lastCommittedUUID
+                            browseDSYM()
+                            return
+                        }
+                        lastCommittedUUID = newValue
+                        syncSelectedURLFromUUID()
+                    }
+
+                    if let selectedDSYMURL {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(
+                                selectedDisplayUUID.isEmpty
+                                    ? L10n.t("UUID: -")
+                                    : L10n.tFormat("UUID: %@", selectedDisplayUUID)
+                            )
+                                .font(.system(.caption2, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            Text(L10n.tFormat("Path: %@", shortenedPath(selectedDSYMURL.path)))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .help(selectedDSYMURL.path)
+                        }
+                    } else {
+                        Text(L10n.t("No dSYM selected"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+
+            GroupBox(L10n.t("Manual Symbolication")) {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 10) {
+                        TextField(L10n.t("Address (hex, e.g. 0x1044c43b0)"), text: $manualHex)
+                            .textFieldStyle(.roundedBorder)
+                        TextField(L10n.t("imageOffset (optional, decimal)"), text: $manualOffset)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 220)
+                    }
+                    Toggle(L10n.t("Use Offset"), isOn: $useOffset)
+                        .toggleStyle(.switch)
+
+                    HStack(spacing: 10) {
+                        Button(manualSymbolicateButtonTitle) {
+                            runManualSymbolication()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(isResolving || selectedDSYMURL == nil || manualHex.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                        Button(L10n.t("Copy")) {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(resultText, forType: .string)
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(resultText.isEmpty)
+                    }
+
+                    if !errorText.isEmpty {
+                        Text(errorText)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .textSelection(.enabled)
+                    }
+
+                    if !resultText.isEmpty {
+                        Text(resultText)
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+
+            HStack {
+                Spacer()
+                Button(L10n.t("Close")) { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+            }
+        }
+        .padding(16)
+        .frame(minWidth: 640, minHeight: 360)
+        .onAppear {
+            if selectedDSYMURL == nil, let first = mergedOptions.first {
+                selectedUUID = first.uuid
+                lastCommittedUUID = first.uuid
+                selectedDisplayUUID = first.uuid
+                selectedDSYMURL = first.url
+            }
+            normalizePickerSelectionIfNeeded()
+        }
+        .alert(L10n.t("Invalid dSYM"), isPresented: Binding(
+            get: { invalidDSYMAlertMessage != nil },
+            set: { newValue in
+                if !newValue { invalidDSYMAlertMessage = nil }
+            }
+        )) {
+            Button(L10n.t("Done")) {
+                invalidDSYMAlertMessage = nil
+            }
+        } message: {
+            Text(invalidDSYMAlertMessage ?? "")
+        }
+    }
+
+    private var indexedOptions: [(uuid: String, displayName: String, url: URL)] {
+        discovery.indexByUUID.values.compactMap { record in
+            guard let resolved = discovery.resolveDSYMURL(forUUID: record.uuid)?.url else { return nil }
+            return (record.uuid, record.displayName, resolved)
+        }
+        .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
+    }
+
+    private var mergedOptions: [(uuid: String, displayName: String, url: URL)] {
+        var items = indexedOptions
+        if let manualOption, !items.contains(where: { $0.uuid == manualOption.uuid }) {
+            items.insert(manualOption, at: 0)
+        }
+        return items
+    }
+
+    private func syncSelectedURLFromUUID() {
+        if selectedUUID.isEmpty {
+            // Keep manual-picked UUID visible when picker uses empty tag.
+            if selectedDSYMURL == nil {
+                selectedDisplayUUID = ""
+            }
+            return
+        }
+        selectedDisplayUUID = selectedUUID
+        if let option = mergedOptions.first(where: { $0.uuid == selectedUUID }) {
+            selectedDSYMURL = option.url
+            manualSelectedDisplayName = option.displayName
+        } else {
+            selectedDSYMURL = discovery.resolveDSYMURL(forUUID: selectedUUID)?.url
+        }
+    }
+
+    private func browseDSYM() {
+        #if os(macOS)
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = L10n.t("Select")
+        panel.title = L10n.t("Select dSYM")
+        if panel.runModal() == .OK, let url = panel.url {
+            guard let parsedUUID = DSYMUUIDResolver.resolveUUID(at: url)?.uuidString else {
+                invalidDSYMAlertMessage = L10n.t("Cannot read UUID from selected dSYM.")
+                return
+            }
+            selectedDSYMURL = url
+            manualSelectedDisplayName = url.lastPathComponent.isEmpty ? url.path : url.lastPathComponent
+            manualOption = (parsedUUID, manualSelectedDisplayName, url)
+            selectedUUID = parsedUUID
+            lastCommittedUUID = parsedUUID
+            selectedDisplayUUID = parsedUUID
+        }
+        #endif
+    }
+
+    private func normalizePickerSelectionIfNeeded() {
+        guard !selectedUUID.isEmpty else { return }
+        let exists = indexedOptions.contains { $0.uuid == selectedUUID }
+        if !exists {
+            // Keep selection when it points to a manual option.
+            if let manualOption, selectedUUID == manualOption.uuid {
+                return
+            }
+            selectedUUID = ""
+            lastCommittedUUID = ""
+        }
+    }
+
+    private func shortenedPath(_ path: String) -> String {
+        let parts = path.split(separator: "/")
+        guard parts.count > 3 else { return path }
+        return ".../\(parts.suffix(3).joined(separator: "/"))"
+    }
+
+    private func runManualSymbolication() {
+        errorText = ""
+        resultText = ""
+        guard let dsymURL = selectedDSYMURL else {
+            errorText = L10n.t("No dSYM selected")
+            return
+        }
+        isResolving = true
+
+        let stop = discovery.startAccessingIfNeeded(for: dsymURL)
+
+        Task.detached(priority: .userInitiated) {
+            defer { stop?() }
+
+            let hex = manualHex.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let pc = parseHexUInt64(hex) else {
+                await MainActor.run {
+                    isResolving = false
+                    errorText = L10n.tFormat("Invalid address format: %@", hex)
+                }
+                return
+            }
+
+            let offsetInt: Int? = {
+                let s = manualOffset.trimmingCharacters(in: .whitespacesAndNewlines)
+                if s.isEmpty { return nil }
+                return Int(s)
+            }()
+
+            let addrUsed: UInt64 = {
+                if useOffset, let off = offsetInt, let vm = DSYMInspector.readTextVMAddrForUI(dsymURL: dsymURL) {
+                    return vm &+ UInt64(off)
+                }
+                return pc
+            }()
+
+            let res = DSYMInspector.symbolicate(dsymURL: dsymURL, address: addrUsed)
+            await MainActor.run {
+                isResolving = false
+                switch res {
+                case .success(let r):
+                    let fn = (r.function?.isEmpty == false) ? r.function! : L10n.t("(No function name)")
+                    let fl: String = {
+                        if let f = r.file, !f.isEmpty, let l = r.line { return "\(f):\(l)" }
+                        return L10n.t("(No file line number)")
+                    }()
+                    resultText = String(
+                        format: L10n.t("pc=0x%016llx  used=0x%016llx\n%@\n%@"),
+                        pc,
+                        addrUsed,
+                        fn,
+                        fl
+                    )
+                case .failure(let err):
+                    errorText = err.localizedDescription
+                }
+            }
+        }
+    }
+
+    private var manualSymbolicateButtonTitle: String {
+        if isResolving {
+            return L10n.t("Symbolicating…")
+        }
+        if selectedDSYMURL == nil {
+            return L10n.t("dSYM not found")
+        }
+        if manualHex.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return L10n.t("Raw text")
+        }
+        return L10n.t("Symbolicate")
+    }
+
+    private func parseHexUInt64(_ s: String) -> UInt64? {
+        let t = s.lowercased().hasPrefix("0x") ? String(s.dropFirst(2)) : s
+        return UInt64(t, radix: 16)
     }
 }
 
@@ -366,9 +669,6 @@ private extension CrashAnalyzerDSYMPanel {
             guard let resolved = try? SecurityScopedBookmarks.resolveBookmark(folder.bookmark) else { continue }
             let resolvedURL = (try? resolved.resolvingSymlinksInPath().standardizedFileURL) ?? resolved.standardizedFileURL
             let resolvedPath = resolvedURL.path.lowercased()
-#if DEBUG
-            print("[CrashAnalyzerDSYMPanel] isSuggestionAuthorized? suggestion=\(url.path) targetPath=\(targetPath) hostMappedTargetPath=\(hostMappedTargetPath ?? "nil") resolvedPath=\(resolvedPath)")
-#endif
             // 1) 直接相等
             if resolvedPath == targetPath { return true }
             if let hostMappedTargetPath, resolvedPath == hostMappedTargetPath { return true }
@@ -504,7 +804,6 @@ private extension CrashAnalyzerDSYMPanel {
 
 #if DEBUG
     private func debugLogSuggestionsToShow(suggestionsToShowCount: Int) -> some View {
-        print("[CrashAnalyzerDSYMPanel] menu open suggestionsToShow=\(suggestionsToShowCount) currentAuthFolders=\(discovery.searchFolders.count)")
         for s in builtInSuggestions {
             let auth = isSuggestionAuthorized(s.url)
             print("  - suggestion '\(s.title)': url=\(s.url.path) authorized=\(auth)")
@@ -513,12 +812,10 @@ private extension CrashAnalyzerDSYMPanel {
     }
 
     private func debugAfterAuthorization(chosen: URL) {
-        print("[CrashAnalyzerDSYMPanel] authorized added path=\(chosen.path)")
         dumpResolvedSearchFolders()
     }
 
     private func debugAfterRemoval() {
-        print("[CrashAnalyzerDSYMPanel] removed one auth folder")
         dumpResolvedSearchFolders()
     }
 
@@ -619,209 +916,16 @@ private struct DSYMInfoSheet: View {
 
     var body: some View {
         ScrollView(.vertical) {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(info.imageName)
-                            .font(.headline)
-                        Text(info.isManual ? "Source: Manual selection" : "Source: Auto-matched")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer(minLength: 10)
-                }
-
-                GroupBox("Basic Information") {
-                    VStack(alignment: .leading, spacing: 10) {
-                        // 概览
-                        if let details {
-                            Text(details.capabilities.summary)
-                                .font(.subheadline.weight(.semibold))
-                            HStack(spacing: 8) {
-                                capabilityPill(title: "Debug info", ok: details.capabilities.hasDebugInfo)
-                                capabilityPill(title: "File:Line", ok: details.capabilities.hasDebugLine)
-                                capabilityPill(title: "Apple accel", ok: details.capabilities.hasAppleAccelerators)
-                                capabilityPill(title: "Aranges", ok: details.capabilities.hasAranges)
-                            }
-                        }
-
-                        Divider().opacity(0.2)
-
-                        // UUID
-                        Text("UUID")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        Text(info.uuid)
-                            .font(.system(.body, design: .monospaced))
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        if let d = details, let binUUID = d.file.uuid, !binUUID.isEmpty {
-                            let ok = (binUUID == info.uuid)
-                            Text(L10n.tFormat(
-                                "dSYM Mach-O UUID: %@ %@",
-                                binUUID,
-                                ok ? L10n.t("(Matched)") : L10n.t("(Unmatched)")
-                            ))
-                                .font(.caption2)
-                                .foregroundStyle(ok ? Color.green : Color.red)
-                                .textSelection(.enabled)
-                        }
-
-                        Divider().opacity(0.2)
-
-                        if let details {
-                            if !details.arch.architectures.isEmpty {
-                                Text(
-                                    L10n.tFormat(
-                                        "Mach-O Architectures: %@",
-                                        details.arch.architectures.joined(separator: ", ")
-                                    )
-                                )
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            } else if details.arch.isFat {
-                                Text("Mach-O Architectures: (fat binary)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                Text("Mach-O Architectures: -")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            if details.dwarfSections.dwarfSegmentFound {
-//                                let names = details.dwarfSections.sectionNames
-//                                let list = names.isEmpty ? "__DWARF" : names.prefix(8).joined(separator: ", ")
-//                                Text("Mach-O __DWARF Sections: \(list)")
-//                                    .font(.caption2)
-//                                    .foregroundStyle(.secondary)
-//                                    .textSelection(.enabled)
-                            } else {
-                                Text("Mach-O __DWARF: Not found (may not be a valid DWARF binary)")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            if details.session.canOpen {
-                                let arch = details.session.architecture ?? "-"
-                                let slice = (details.session.universalBinaryIndex != nil && details.session.universalBinaryCount != nil)
-                                    ? "\(details.session.universalBinaryIndex!)/\(details.session.universalBinaryCount!)"
-                                    : "-"
-                                Text(L10n.tFormat(
-                                    "Swift-dwarf session: Openable (arch=%@, slice=%@)",
-                                    arch,
-                                    slice
-                                ))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                Text(L10n.tFormat(
-                                    "Swift-dwarf session: Failed to open: %@",
-                                    details.session.errorText ?? "unknown"
-                                ))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        } else {
-                            Text("Loading…")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Divider().opacity(0.2)
-
-                        // Details + path
-                        Text("Details / Path")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        if let details {
-                            if let size = details.file.fileSize {
-                                Text(L10n.tFormat(
-                                    "DWARF file size: %@",
-                                    ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
-                                ))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                Text(L10n.t("DWARF file size: -"))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            if let d = details.file.modificationDate {
-                                Text(L10n.tFormat("Last modified: %@", format(date: d)))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                Text(L10n.t("Last modified: -"))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        Text(info.url.path)
-                            .font(.system(.caption, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 2)
-                }
-
-                GroupBox("Manual Symbolication") {
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack(spacing: 10) {
-                            TextField("Address (hex, e.g. 0x1044c43b0)", text: $manualHex)
-                                .textFieldStyle(.roundedBorder)
-                            Button(isManualResolving ? "Symbolicating…" : "Symbolicate") {
-                                runManualSymbolication()
-                            }
-                            .disabled(isManualResolving || manualHex.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        }
-
-                        HStack(spacing: 10) {
-                            Toggle("Use __TEXT vmaddr + imageOffset", isOn: $manualUseTextVMAddr)
-                                .toggleStyle(.switch)
-                            TextField("imageOffset (optional, decimal)", text: $manualOffset)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(width: 220)
-                            Spacer(minLength: 0)
-                        }
-
-                        if !manualErrorText.isEmpty {
-                            Text(manualErrorText)
-                                .font(.caption)
-                                .foregroundStyle(.red)
-                                .textSelection(.enabled)
-                        }
-
-                        if !manualResultText.isEmpty {
-                            Text(manualResultText)
-                                .font(.system(.caption, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                                .textSelection(.enabled)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 2)
-                }
-
-                HStack(spacing: 10) {
-                    #if os(macOS)
-                    Button("Show in Finder") {
-                        NSWorkspace.shared.activateFileViewerSelecting([info.url])
-                    }
-                    #endif
-                    Spacer()
-                }
+            VStack(alignment: .leading, spacing: 16) {
+                headerSection
+                statusSection
+                basicInfoSection
+                manualSymbolicationSection
+                bottomBar
             }
             .padding(16)
         }
         .frame(minWidth: 520, minHeight: 320)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Close") { dismiss() }
-            }
-        }
         .task {
             // 读取 dSYM 详情时也需要安全作用域（自动发现的路径可能来自书签根目录）
             let stop = DSYMAutoDiscoveryStore.shared.startAccessingIfNeeded(for: info.url)
@@ -834,14 +938,176 @@ private struct DSYMInfoSheet: View {
         }
     }
 
-    private func capabilityPill(title: String, ok: Bool) -> some View {
-        Text(ok ? title : "\(title)")
-            .font(.caption2.weight(.semibold))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background((ok ? Color.green : Color.secondary).opacity(0.14))
-            .foregroundStyle(ok ? Color.green : Color.secondary)
-            .clipShape(Capsule())
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(info.imageName)
+                .font(.headline)
+            Text(info.isManual ? L10n.t("Source: Manual selection") : L10n.t("Source: Auto-matched"))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var statusSection: some View {
+        Group {
+            if let d = details, let binUUID = d.file.uuid, !binUUID.isEmpty {
+                let matched = (binUUID == info.uuid)
+                HStack(spacing: 8) {
+                    Image(systemName: matched ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                        .foregroundStyle(matched ? Color.green : Color.orange)
+                    Text(matched ? L10n.t("UUID Matched") : L10n.t("UUID Not Matched"))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(matched ? Color.green : Color.orange)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background((matched ? Color.green : Color.orange).opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            } else {
+                Text(L10n.t("Loading…"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var basicInfoSection: some View {
+        GroupBox(L10n.t("Basic Information")) {
+            VStack(alignment: .leading, spacing: 12) {
+                if let d = details {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 12) {
+                        gridCell(title: L10n.t("Architecture"), value: architectureText(from: d))
+                        gridCell(title: L10n.t("File Size"), value: fileSizeText(from: d))
+                        gridCell(title: L10n.t("Modified"), value: modifiedText(from: d))
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
+                        Text(L10n.t("UUID"))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Button {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(info.uuid, forType: .string)
+                        } label: {
+                            Image(systemName: "doc.on.doc")
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    Text(info.uuid)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L10n.t("Path"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Button(shortenedPath(info.url.path)) {
+                        openPathInFinder()
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .font(.system(.caption, design: .monospaced))
+                    .help(info.url.path)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 2)
+        }
+    }
+
+    private var manualSymbolicationSection: some View {
+        GroupBox(L10n.t("Manual Symbolication")) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    TextField(L10n.t("Address (hex, e.g. 0x1044c43b0)"), text: $manualHex)
+                        .textFieldStyle(.roundedBorder)
+                    TextField(L10n.t("imageOffset (optional, decimal)"), text: $manualOffset)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 220)
+                    Button(isManualResolving ? L10n.t("Symbolicating…") : L10n.t("Symbolicate")) {
+                        runManualSymbolication()
+                    }
+                    .disabled(isManualResolving || manualHex.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+
+                Toggle(L10n.t("Use Offset"), isOn: $manualUseTextVMAddr)
+                    .toggleStyle(.switch)
+
+                if !manualErrorText.isEmpty {
+                    Text(manualErrorText)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .textSelection(.enabled)
+                }
+
+                if !manualResultText.isEmpty {
+                    Text(manualResultText)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 2)
+        }
+    }
+
+    private var bottomBar: some View {
+        HStack(spacing: 10) {
+            Button(L10n.t("Show in Finder")) {
+                openPathInFinder()
+            }
+            .buttonStyle(.borderedProminent)
+
+            Spacer(minLength: 0)
+
+            Button(L10n.t("Close")) { dismiss() }
+                .buttonStyle(.bordered)
+        }
+    }
+
+    private func gridCell(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func architectureText(from details: DSYMInspector.DSYMDetails) -> String {
+        if !details.arch.architectures.isEmpty { return details.arch.architectures.joined(separator: ", ") }
+        if details.arch.isFat { return L10n.t("fat binary") }
+        return "-"
+    }
+
+    private func fileSizeText(from details: DSYMInspector.DSYMDetails) -> String {
+        guard let size = details.file.fileSize else { return "-" }
+        return ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
+    }
+
+    private func modifiedText(from details: DSYMInspector.DSYMDetails) -> String {
+        guard let d = details.file.modificationDate else { return "-" }
+        return format(date: d)
+    }
+
+    private func shortenedPath(_ path: String) -> String {
+        let parts = path.split(separator: "/")
+        guard parts.count > 3 else { return path }
+        return ".../\(parts.suffix(3).joined(separator: "/"))"
+    }
+
+    private func openPathInFinder() {
+        #if os(macOS)
+        NSWorkspace.shared.selectFile(info.url.path, inFileViewerRootedAtPath: "")
+        #endif
     }
 
     private func samplePCsAndOffsets(forUUID uuid: String) -> (pcs: [UInt64], offsets: [Int?]) {
@@ -907,7 +1173,13 @@ private struct DSYMInfoSheet: View {
                         if let f = r.file, !f.isEmpty, let l = r.line { return "\(f):\(l)" }
                         return L10n.t("(No file line number)")
                     }()
-                    manualResultText = String(format: "pc=0x%016llx  used=0x%016llx\n%@\n%@", pc, addrUsed, fn, fl)
+                    manualResultText = String(
+                        format: L10n.t("pc=0x%016llx  used=0x%016llx\n%@\n%@"),
+                        pc,
+                        addrUsed,
+                        fn,
+                        fl
+                    )
                 case .failure(let err):
                     manualErrorText = err.localizedDescription
                 }

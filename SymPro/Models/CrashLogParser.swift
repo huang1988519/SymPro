@@ -10,13 +10,14 @@ enum CrashLogParser {
     static func parse(url: URL, data: Data) -> CrashLog? {
         guard let content = String(data: data, encoding: .utf8) else { return nil }
         let fileName = url.lastPathComponent
+        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
 
         // .ips：首行为 metadata JSON，其余为 report JSON（bug_type 309 = crash）
-        if content.hasPrefix("{"), let crash = parseIPS(content: content) {
+        if trimmed.hasPrefix("{"), let crash = parseIPS(content: trimmed) {
             return CrashLog(
                 fileURL: url,
                 fileName: fileName,
-                sourceText: content,
+                sourceText: trimmed,
                 rawText: crash.translatedReport,
                 model: crash.model,
                 processName: crash.processName,
@@ -30,12 +31,19 @@ enum CrashLogParser {
         let uuidList = extractUUIDs(from: plainCrashText)
         let binaryImages = extractBinaryImages(from: plainCrashText)
         let processName = extractProcessName(from: plainCrashText)
+        let legacyModel: CrashReportModel? = {
+            // Text crash reports (.crash / translated .ips / third-party exports):
+            // build a structured model from the translated report text so UI can show backtrace.
+            let ext = url.pathExtension.lowercased()
+            guard ext == "ips" || ext == "crash" else { return nil }
+            return CrashReportModel.fromTranslatedReportText(plainCrashText, processNameFallback: processName)
+        }()
         return CrashLog(
             fileURL: url,
             fileName: fileName,
             sourceText: content,
             rawText: plainCrashText,
-            model: nil,
+            model: legacyModel,
             processName: processName,
             uuidList: uuidList,
             binaryImages: binaryImages
@@ -45,7 +53,7 @@ enum CrashLogParser {
     /// 解析 IPS 内容，返回 Translated Report 文本、进程名及 UUID/BinaryImages（用于 dSYM 匹配与符号化）。
     private static func parseIPS(content: String) -> (translatedReport: String, processName: String?, uuidList: [String], binaryImages: [BinaryImage], model: CrashReportModel?)? {
         guard let (metadata, report) = extractIPSPayload(content: content),
-              (metadata["bug_type"] as? String) == "309" else { return nil }
+              isCrashBugType309(metadata) else { return nil }
         guard let translated = IPSReportFormatter.translatedReport(metadata: metadata, report: report) else { return nil }
         let processName = report["procName"] as? String
         let model = CrashReportModel.fromIPS(metadata: metadata, report: report)
@@ -68,6 +76,14 @@ enum CrashLogParser {
             }
         }
         return (translatedReport: translated, processName: processName, uuidList: uuidList, binaryImages: binaryImages, model: model)
+    }
+
+    private static func isCrashBugType309(_ metadata: [String: Any]) -> Bool {
+        // bug_type 在不同 iOS/导出版本里可能是 String ("309") 或数字 (309)。
+        if let s = metadata["bug_type"] as? String { return s == "309" }
+        if let n = metadata["bug_type"] as? NSNumber { return n.intValue == 309 }
+        if let i = metadata["bug_type"] as? Int { return i == 309 }
+        return false
     }
 
     /// 支持两种输入：
@@ -228,44 +244,44 @@ enum CrashLogParser {
         for line in lines {
             if line.contains("Binary Images:") { inBinaryImages = true; continue }
             if !inBinaryImages { continue }
-            if line.isEmpty || line.hasPrefix(" ") == false { break }
+            if line.isEmpty { break }
             let parts = line.split(separator: " ", omittingEmptySubsequences: true)
             // 0x100000000 - 0x100123456  App (1.0) <UUID>  /path
-            if parts.count >= 4,
-               let loadAddr = parseHex(String(parts[0])) {
-                var arch = "arm64"
-                var uuid: String?
-                var name = ""
-                for (i, p) in parts.enumerated() {
-                    let s = String(p)
-                    if s.uppercased() == "UUID" && i + 1 < parts.count {
-                        uuid = String(parts[i + 1])
-                        break
-                    }
-                    if i >= 2 && !s.hasPrefix("0x") && s != "UUID" {
-                        if name.isEmpty { name = s }
-                        break
-                    }
+            guard parts.count >= 4 else { break }
+            guard let loadAddr = parseHex(String(parts[0])) else { break }
+
+            var arch = "arm64"
+            var uuid: String?
+            var name = ""
+            for (i, p) in parts.enumerated() {
+                let s = String(p)
+                if s.uppercased() == "UUID" && i + 1 < parts.count {
+                    uuid = String(parts[i + 1])
+                    break
                 }
-                if uuid == nil {
-                    // 常见形式：... Name arch <uuid> /path
-                    if let token = parts.first(where: { $0.first == "<" && $0.last == ">" }) {
-                        let raw = String(token.dropFirst().dropLast())
-                        let compact = raw.replacingOccurrences(of: "-", with: "").uppercased()
-                        if compact.count == 32, compact.allSatisfy({ $0.isHexDigit }) {
-                            uuid = formatUUID(compact)
-                        }
-                    }
+                if i >= 2 && !s.hasPrefix("0x") && s != "UUID" {
+                    if name.isEmpty { name = s }
+                    break
                 }
-                if parts.count >= 4 {
-                    let maybeArch = String(parts[3]).lowercased()
-                    if maybeArch.hasPrefix("arm") || maybeArch.hasPrefix("x86") {
-                        arch = String(parts[3])
-                    }
-                }
-                if name.isEmpty, parts.count >= 3 { name = String(parts[2]) }
-                images.append(BinaryImage(loadAddress: loadAddr, architecture: arch, name: name, uuid: uuid))
             }
+            if uuid == nil {
+                // 常见形式：... Name arch <uuid> /path
+                if let token = parts.first(where: { $0.first == "<" && $0.last == ">" }) {
+                    let raw = String(token.dropFirst().dropLast())
+                    let compact = raw.replacingOccurrences(of: "-", with: "").uppercased()
+                    if compact.count == 32, compact.allSatisfy({ $0.isHexDigit }) {
+                        uuid = formatUUID(compact)
+                    }
+                }
+            }
+            if parts.count >= 4 {
+                let maybeArch = String(parts[3]).lowercased()
+                if maybeArch.hasPrefix("arm") || maybeArch.hasPrefix("x86") {
+                    arch = String(parts[3])
+                }
+            }
+            if name.isEmpty, parts.count >= 3 { name = String(parts[2]) }
+            images.append(BinaryImage(loadAddress: loadAddr, architecture: arch, name: name, uuid: uuid))
         }
         return images
     }

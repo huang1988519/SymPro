@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 struct CrashAnalyzerMainView: View {
     @EnvironmentObject private var state: SymbolicateWorkspaceState
@@ -6,6 +7,7 @@ struct CrashAnalyzerMainView: View {
     @State private var tab: AnalyzerTab = .backtrace
     @State private var showSymbolicationErrorAlert: Bool = false
     @State private var tabSelectedThreadIndex: Int = 0
+    @State private var hasRequestedAINotificationPermission: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -38,6 +40,15 @@ struct CrashAnalyzerMainView: View {
         .onChange(of: state.crashLog?.id) { _ in
             tabSelectedThreadIndex = preferredThreadIndex(model: state.symbolicatedModel ?? state.crashLog?.model)
         }
+        .onChange(of: state.aiAnalysisText) { newValue in
+            let content = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !content.isEmpty else { return }
+            guard tab != .aiInsight else { return }
+            notifyAIAnalysisReady()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .symProOpenAIInsight)) { _ in
+            tab = .aiInsight
+        }
     }
 
     private var topBar: some View {
@@ -58,11 +69,18 @@ struct CrashAnalyzerMainView: View {
                     .foregroundStyle(Color.secondary)
             }
 
+            Button(L10n.t("Manual Symbolicate…")) {
+                state.showManualSymbolicateSheet = true
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            
             Spacer()
 
             uuidMatchPill
             symbolicationStatusPill
-
+            
+            
             Button {
                 state.startSymbolication()
             } label: {
@@ -85,11 +103,12 @@ struct CrashAnalyzerMainView: View {
             .disabled(!canSymbolicate)
             .help(symbolizeHelpText)
 
-//            Button(L10n.t("Open New File")) {
-//                state.pickCrashLog()
-//            }
-//            .buttonStyle(.bordered)
-//            .controlSize(.small)
+            Button(L10n.t("Raw text")) {
+                showRawTextReport()
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .disabled(state.crashLog == nil)
 
             Button(L10n.t("Export Report")) {
                 state.exportSymbolicatedResult()
@@ -170,6 +189,14 @@ struct CrashAnalyzerMainView: View {
         return total > 0 && ok > 0
     }
 
+    private func showRawTextReport() {
+        guard let crash = state.crashLog else { return }
+        state.symbolicatedModel = nil
+        state.symbolicationError = nil
+        state.symbolicationErrorKind = nil
+        state.symbolicatedText = ReportDisplayStyle.translatedReportOnly(crash.rawText)
+    }
+
     private var symbolizeHelpText: String {
         guard state.crashLog != nil else { return L10n.t("Please open a crash file first") }
         if state.isSymbolicating { return L10n.t("Symbolication in progress") }
@@ -204,6 +231,8 @@ struct CrashAnalyzerMainView: View {
                     PlaceholderPanel(title: "Registers", subtitle: "ThreadState registers display (to be integrated)")
                 case .binaryImages:
                     ImagesView(state: state)
+                case .aiInsight:
+                    aiInsightPanel
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -214,6 +243,7 @@ struct CrashAnalyzerMainView: View {
     private var tabBar: some View {
         HStack(spacing: 18) {
             underlineTabItem(title: L10n.t("Backtrace"), tab: .backtrace)
+            underlineTabItem(title: L10n.t("AI Insight"), tab: .aiInsight)
 //            underlineTabItem(title: "Registers", tab: .registers)
 //            underlineTabItem(title: "Binary Images", tab: .binaryImages)
             Spacer(minLength: 0)
@@ -252,12 +282,153 @@ struct CrashAnalyzerMainView: View {
         if let crashed = model.threads.first(where: { $0.triggered })?.index { return crashed }
         return model.threads.first(where: { !$0.frames.isEmpty })?.index ?? 0
     }
+
+    private var aiInsightPanel: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(L10n.t("AI Insight"))
+                    .font(.headline)
+                Spacer()
+                Button(state.isAnalyzingCrashWithAI ? L10n.t("Analyzing…") : L10n.t("AI Analyze")) {
+                    state.requestAIAnalysis()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(state.crashLog == nil || state.isAnalyzingCrashWithAI)
+            }
+
+            if let err = state.aiAnalysisError, !err.isEmpty {
+                Text(err)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
+            if state.isAnalyzingCrashWithAI {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text(L10n.t("Analyzing…"))
+                            .font(.subheadline.weight(.medium))
+                    }
+                    .padding(.bottom, 2)
+
+                    Text(L10n.t("• 正在读取崩溃上下文并提炼问题点"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(L10n.t("• 正在生成精简结论与修复建议"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(L10n.t("• 完成后将自动展示结果"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                // .background(
+                //     RoundedRectangle(cornerRadius: 10, style: .continuous)
+                //         .fill(Color(nsColor: .textBackgroundColor))
+                // )
+                // .overlay(
+                //     RoundedRectangle(cornerRadius: 10, style: .continuous)
+                //         .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                // )
+            } else if state.aiAnalysisText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(L10n.t("AI analysis not generated yet."))
+                        .foregroundStyle(.secondary)
+                    Text(L10n.t("点击右上角 “AI Analyze” 开始分析。"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color(nsColor: .textBackgroundColor))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                )
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(formattedAIInsightText)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.primary)
+                            .lineSpacing(4)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                    }
+                    .padding(14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color(nsColor: .textBackgroundColor))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                    )
+                    .frame(maxWidth: 960, alignment: .topLeading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+    }
+
+    private var formattedAIInsightText: String {
+        var s = state.aiAnalysisText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !s.isEmpty else { return s }
+
+        // Keep "single-paragraph style" but add readable wraps around key transitions.
+        s = s.replacingOccurrences(of: "；", with: "；\n")
+        s = s.replacingOccurrences(of: ";", with: ";\n")
+        s = s.replacingOccurrences(of: "建议排查", with: "\n建议排查")
+        s = s.replacingOccurrences(of: "排查方向", with: "\n排查方向")
+
+        while s.contains("\n\n\n") {
+            s = s.replacingOccurrences(of: "\n\n\n", with: "\n\n")
+        }
+        return s
+    }
+
+    private func notifyAIAnalysisReady() {
+        let center = UNUserNotificationCenter.current()
+        if !hasRequestedAINotificationPermission {
+            hasRequestedAINotificationPermission = true
+            center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+                guard granted else { return }
+                postAIReadyNotification(center: center)
+            }
+            return
+        }
+        postAIReadyNotification(center: center)
+    }
+
+    private func postAIReadyNotification(center: UNUserNotificationCenter) {
+        let content = UNMutableNotificationContent()
+        content.title = "AI 分析已完成"
+        content.body = "崩溃报告解读结果已生成，可切换到 AI 解读页查看。"
+        content.sound = .default
+
+        let request = UNNotificationRequest(
+            identifier: "sympro.ai.analysis.ready",
+            content: content,
+            trigger: nil
+        )
+        center.removePendingNotificationRequests(withIdentifiers: ["sympro.ai.analysis.ready"])
+        center.add(request)
+    }
 }
 
 private enum AnalyzerTab: Hashable {
     case backtrace
     case registers
     case binaryImages
+    case aiInsight
 }
 
 private struct PlaceholderPanel: View {

@@ -10,21 +10,35 @@ import AppKit
 
 struct SettingsView: View {
     @ObservedObject private var settings = SettingsStore.shared
+    @Environment(\.colorScheme) private var colorScheme
     @ObservedObject private var discovery = DSYMAutoDiscoveryStore.shared
     @State private var discoveryError: String?
+    @State private var showLLMProviderSheet: Bool = false
+    @State private var themeRefreshNonce: Int = 0
 
     var body: some View {
         ScrollView(.vertical) {
-            VStack(alignment: .leading, spacing: 18) {
-//                pageHeader
+            VStack(alignment: .leading, spacing: 16) {
                 appearanceSectionCard
-                dsymDiscoverySectionCard
+                llmOpenAPISectionCard
                 aboutSectionCard
-                Spacer(minLength: 0)
             }
-            .padding(25)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .padding(20)
+            .frame(maxWidth: 520, alignment: .topLeading)
         }
+        .frame(minWidth: 380, idealWidth: 460, maxWidth: 600)
+        .frame(minHeight: 320, idealHeight: 420, maxHeight: 900)
+        .id(themeRefreshID)
+        .onChange(of: settings.appearanceMode) { _ in
+            triggerThemeRefresh()
+        }
+        .onChange(of: colorScheme) { _ in
+            triggerThemeRefresh()
+        }
+    }
+
+    private var themeRefreshID: String {
+        "\(settings.appearanceMode.rawValue)-\(colorScheme == .dark ? "dark" : "light")-\(themeRefreshNonce)"
     }
 
     private var pageHeader: some View {
@@ -53,36 +67,113 @@ struct SettingsView: View {
                 .labelsHidden()
                 .pickerStyle(.menu)
             }
-            Divider()
-            settingsCardRow(
-                title: "Result Font Size",
-                subtitle: "Affects Overview / Raw Log / Result display."
-            ) {
-                Text("\(Int(settings.resultFontSize)) pt")
-                    .font(.body.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-            Divider()
-            VStack(alignment: .leading, spacing: 10) {
-                Slider(value: Binding(
-                    get: { settings.resultFontSize },
-                    set: { settings.resultFontSize = $0 }
-                ), in: 10...24, step: 1)
-                Text("Sample: Aa symbolicated result text")
-                    .font(.system(size: settings.resultFontSize, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(nsColor: .textBackgroundColor).opacity(0.35))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+//            Divider()
+//            settingsCardRow(
+//                title: "Result Font Size",
+//                subtitle: "Affects Overview / Raw Log / Result display."
+//            ) {
+//                Text("\(Int(settings.resultFontSize)) pt")
+//                    .font(.body.monospacedDigit())
+//                    .foregroundStyle(.secondary)
+//            }
+//            Divider()
+//            VStack(alignment: .leading, spacing: 10) {
+//                Slider(value: Binding(
+//                    get: { settings.resultFontSize },
+//                    set: { settings.resultFontSize = $0 }
+//                ), in: 10...24, step: 1)
+//                Text("Sample: Aa symbolicated result text")
+//                    .font(.system(size: settings.resultFontSize, design: .monospaced))
+//                    .foregroundStyle(.secondary)
+//                    .padding(.vertical, 6)
+//                    .padding(.horizontal, 10)
+//                    .frame(maxWidth: .infinity, alignment: .leading)
+//                    .background(Color(nsColor: .textBackgroundColor).opacity(0.35))
+//                    .clipShape(RoundedRectangle(cornerRadius: 8))
+//            }
+//            .padding(.horizontal, 12)
+//            .padding(.vertical, 10)
         } label: {
             Text("Appearance")
                 .font(.headline)
         }
+    }
+
+    private var llmOpenAPISectionCard: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 12) {
+                Button {
+                    showLLMProviderSheet = true
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "globe")
+                            .font(.title2)
+                            .foregroundStyle(.blue)
+                            .frame(width: 40, height: 40)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(llmProviderRowTitle)
+                                .foregroundStyle(.primary)
+                                .multilineTextAlignment(.leading)
+                            Text(llmProviderRowSubtitle)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                        }
+                        Spacer(minLength: 8)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(Color(nsColor: .controlBackgroundColor))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .strokeBorder(Color(nsColor: .separatorColor).opacity(0.45), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Text(L10n.t("Analysis uses the current crash file as input."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+        } label: {
+            Text(L10n.t("Providers"))
+                .font(.headline)
+        }
+        .sheet(isPresented: $showLLMProviderSheet) {
+            LLMProviderSettingsSheet(settings: settings)
+        }
+    }
+
+    private var llmProviderRowTitle: String {
+        let n = settings.llmProviderDisplayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !n.isEmpty { return n }
+        return L10n.t("Model Provider")
+    }
+
+    private var llmProviderRowSubtitle: String {
+        let m = settings.llmModel.trimmingCharacters(in: .whitespacesAndNewlines)
+        let u = settings.llmBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        if u.isEmpty, m.isEmpty {
+            return L10n.t("Not configured")
+        }
+        if let url = URL(string: u), let host = url.host {
+            if m.isEmpty { return host }
+            return "\(m) · \(host)"
+        }
+        if !m.isEmpty, !u.isEmpty {
+            return "\(m) · \(u)"
+        }
+        return m.isEmpty ? u : m
     }
 
     private var dsymDiscoverySectionCard: some View {
@@ -152,6 +243,15 @@ struct SettingsView: View {
             settingsCardRow(title: "Build", subtitle: nil) {
                 Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "-")
                     .foregroundStyle(.secondary)
+            }
+            Divider()
+            settingsCardRow(title: "Feedback", subtitle: "support@anti.xin") {
+                HStack(spacing: 8) {
+                    Button("Email Support") {
+                        sendFeedbackEmail()
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
         } label: {
             Text("About")
@@ -279,6 +379,47 @@ struct SettingsView: View {
         }
         #endif
     }
+
+    private func sendFeedbackEmail() {
+        #if os(macOS)
+        guard let url = feedbackMailURL() else { return }
+        if NSWorkspace.shared.open(url) { return }
+
+        // Fallback: explicitly ask Mail.app to handle the mailto URL.
+        let mailAppURL = URL(fileURLWithPath: "/System/Applications/Mail.app")
+        if FileManager.default.fileExists(atPath: mailAppURL.path) {
+            let cfg = NSWorkspace.OpenConfiguration()
+            NSWorkspace.shared.open(
+                [url],
+                withApplicationAt: mailAppURL,
+                configuration: cfg
+            ) { _, _ in
+                // Ignore callback result; user still has copy fallback button.
+            }
+        }
+        #endif
+    }
+
+    private func feedbackMailURL() -> URL? {
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = "support@anti.xin"
+        
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: "SymPro Feedback")
+    ]
+    
+    return components.url
+}
+
+    private func triggerThemeRefresh() {
+        themeRefreshNonce &+= 1
+        // Some AppKit-backed controls update appearance one runloop later.
+        DispatchQueue.main.async {
+            themeRefreshNonce &+= 1
+        }
+    }
+
 }
 
 #Preview {

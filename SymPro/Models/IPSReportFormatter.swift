@@ -10,7 +10,7 @@ import Foundation
 enum IPSReportFormatter {
     /// 将 IPS 元数据（第一行）与报告 JSON 转为苹果 Translated Report 文本。
     static func translatedReport(metadata: [String: Any], report: [String: Any]) -> String? {
-        guard (metadata["bug_type"] as? String) == "309" else { return nil }
+        guard isCrashBugType309(metadata) else { return nil }
         var lines: [String] = []
         // Process, Path, Identifier, Version, Code Type, Role, Parent, Coalition, User ID
         let procName = report["procName"] as? String ?? metadata["name"] as? String ?? "???"
@@ -239,6 +239,14 @@ enum IPSReportFormatter {
         }
 
         return lines.joined(separator: "\n")
+    }
+
+    private static func isCrashBugType309(_ metadata: [String: Any]) -> Bool {
+        // bug_type 在不同 iOS/导出版本里可能是 String ("309") 或数字 (309)。
+        if let s = metadata["bug_type"] as? String { return s == "309" }
+        if let n = metadata["bug_type"] as? NSNumber { return n.intValue == 309 }
+        if let i = metadata["bug_type"] as? Int { return i == 309 }
+        return false
     }
 
     private static func hex(_ n: UInt64) -> String {
