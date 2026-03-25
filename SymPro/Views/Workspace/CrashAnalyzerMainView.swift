@@ -210,10 +210,14 @@ struct CrashAnalyzerMainView: View {
 
     private var leftSidebar: some View {
         CrashAnalyzerLeftSidebarView(
-            model: state.symbolicatedModel ?? state.crashLog?.model,
+            model: activeModel,
             selectedThreadIndex: $tabSelectedThreadIndex
         )
         .background(Color(nsColor: .controlBackgroundColor))
+    }
+
+    private var activeModel: CrashReportModel? {
+        state.symbolicatedModel ?? state.crashLog?.model
     }
 
     private var centerContent: some View {
@@ -224,7 +228,7 @@ struct CrashAnalyzerMainView: View {
                 switch tab {
                 case .backtrace:
                     CrashAnalyzerBacktraceView(
-                        model: state.symbolicatedModel ?? state.crashLog?.model,
+                        model: activeModel,
                         selectedThreadIndex: $tabSelectedThreadIndex
                     )
                 case .registers:
@@ -353,13 +357,10 @@ struct CrashAnalyzerMainView: View {
                 )
             } else {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(formattedAIInsightText)
-                            .font(.system(size: 13))
-                            .foregroundStyle(.primary)
-                            .lineSpacing(4)
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(aiInsightSections) { section in
+                            aiInsightSectionCard(section)
+                        }
                     }
                     .padding(14)
                     .background(
@@ -395,6 +396,62 @@ struct CrashAnalyzerMainView: View {
         return s
     }
 
+    private var aiInsightSections: [AISection] {
+        let text = formattedAIInsightText
+        var sections: [AISection] = []
+        var currentTitle: String?
+        var currentBody: [String] = []
+
+        func flush() {
+            guard let currentTitle else { return }
+            let body = currentBody
+                .joined(separator: "\n")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            sections.append(AISection(title: currentTitle, body: body.isEmpty ? "Insufficient info" : body))
+            currentBody.removeAll(keepingCapacity: true)
+        }
+
+        for rawLine in text.components(separatedBy: .newlines) {
+            let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
+            if line.hasPrefix("【"), line.contains("】") {
+                flush()
+                currentTitle = line
+            } else if !line.isEmpty {
+                currentBody.append(line)
+            }
+        }
+        flush()
+
+        if sections.isEmpty {
+            return [AISection(title: "AI Insight", body: text)]
+        }
+        return sections
+    }
+
+    private func aiInsightSectionCard(_ section: AISection) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(section.title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.primary)
+            Text(section.body)
+                .font(.system(size: 13))
+                .foregroundStyle(.primary)
+                .lineSpacing(4)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+        )
+    }
+
     private func notifyAIAnalysisReady() {
         let center = UNUserNotificationCenter.current()
         if !hasRequestedAINotificationPermission {
@@ -422,6 +479,12 @@ struct CrashAnalyzerMainView: View {
         center.removePendingNotificationRequests(withIdentifiers: ["sympro.ai.analysis.ready"])
         center.add(request)
     }
+}
+
+private struct AISection: Identifiable {
+    let id = UUID()
+    let title: String
+    let body: String
 }
 
 private enum AnalyzerTab: Hashable {
