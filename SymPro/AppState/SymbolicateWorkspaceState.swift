@@ -384,6 +384,10 @@ final class SymbolicateWorkspaceState: NSObject, ObservableObject {
 
     @MainActor
     func requestAIAnalysis() {
+        guard !RegionPolicy.isChinaMainland else {
+            aiAnalysisError = L10n.t("AI features are not available in your region.")
+            return
+        }
         guard let crash = crashLog else {
             aiAnalysisError = L10n.t("Please open a crash file first")
             return

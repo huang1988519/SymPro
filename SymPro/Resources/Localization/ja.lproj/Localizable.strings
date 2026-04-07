@@ -122,15 +122,15 @@
 "Main" = "メイン";
 "Queue: %@" = "キュー：%@";
 
-"LLM (OpenAI-compatible API)" = "LLM（OpenAI互換API）";
+"LLM (OpenAI-compatible API)" = "LLM（Chat Completions API）";
 "Provider" = "プロバイダー";
-"Preset for OpenAI-compatible base URL and default model." = "プリセットでOpenAI互換のBase URLと既定モデルを設定します。";
+"Preset for OpenAI-compatible base URL and default model." = "プリセットでChat CompletionsのBase URLと既定モデルを設定します。";
 "Custom" = "カスタム";
 "OpenAI" = "OpenAI";
 "DashScope (Qwen)" = "DashScope（Qwen）";
 "DeepSeek" = "DeepSeek";
 "Base URL" = "Base URL";
-"Usually ends with /v1 for OpenAI-compatible servers." = "OpenAI互換サーバーでは通常 /v1 で終わります。";
+"Usually ends with /v1 for OpenAI-compatible servers." = "Chat Completions互換サーバーでは通常 /v1 で終わります。";
 "Model" = "モデル";
 "Chat Completions model id (e.g. gpt-4o-mini, qwen-turbo)." = "Chat CompletionsのモデルID（例: gpt-4o-mini、qwen-turbo）。";
 "API Key" = "APIキー";
@@ -187,7 +187,7 @@
 "Delete Provider" = "プロバイダーを削除";
 "Delete provider confirmation" = "URL・モデル・保存済み API キー・説明が削除されます。この操作は取り消せません。";
 "Provider help" = "ヘルプ";
-"Provider help message" = "OpenAI 互換 API（URL、モデル、任意の API キー）を設定します。「保存」をクリックするとキーはキーチェーンに保存されます。クラッシュ解析には現在開いているクラッシュファイルが入力として使われます。";
+"Provider help message" = "Chat Completions API（URL、モデル、任意の API キー）を設定します。「保存」をクリックするとキーはキーチェーンに保存されます。クラッシュ解析には現在開いているクラッシュファイルが入力として使われます。";
 "Fetch Models" = "モデルを取得";
 "Available models" = "利用可能なモデル";
 "Please enter URL first." = "先に URL を入力してください。";
@@ -203,6 +203,7 @@
 "AI analysis not generated yet." = "AI 解析はまだ生成されていません。";
 "Please configure LLM provider in Settings first." = "先に設定で LLM プロバイダーを構成してください。";
 "No analysis returned." = "解析結果が返されませんでした。";
+"AI features are not available in your region." = "お住まいの地域ではこの機能をご利用いただけません。";
 "About this crash type" = "このクラッシュ種別について";
 "Possible cause for this crash type" = "このクラッシュ種別で想定される原因";
 "Crash reason: EXC_BAD_ACCESS" = "不正なメモリアクセスの可能性があります（ダングリングポインタ、解放後アクセス、越境アクセスなど）。";

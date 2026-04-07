@@ -24,6 +24,18 @@ private final class SymProAppDelegate: NSObject, NSApplicationDelegate, UNUserNo
         UNUserNotificationCenter.current().delegate = self
     }
 
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            for window in sender.windows {
+                if window.canBecomeMain {
+                    window.makeKeyAndOrderFront(self)
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         guard response.notification.request.identifier == "sympro.ai.analysis.ready" else { return }
         #if os(macOS)
@@ -38,12 +50,26 @@ private final class SymProAppDelegate: NSObject, NSApplicationDelegate, UNUserNo
 @main
 struct SymProApp: App {
     @NSApplicationDelegateAdaptor(SymProAppDelegate.self) private var appDelegate
+    @Environment(\.openWindow) private var openWindow
     @StateObject private var workspaceState = SymbolicateWorkspaceState()
     @ObservedObject private var settings = SettingsStore.shared
     @ObservedObject private var recentStore = RecentCrashLogStore.shared
 
+    #if os(macOS)
+    private func ensureMainWindowVisible() {
+        for window in NSApp.windows where window.canBecomeMain {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        openWindow(id: "main")
+        NSApp.activate(ignoringOtherApps: true)
+    }
+    #endif
+
     var body: some Scene {
-        WindowGroup {
+        WindowGroup("SymPro", id: "main") {
             RootView()
                 .environmentObject(workspaceState)
                 .preferredColorScheme(settings.appearanceMode.preferredColorScheme)
@@ -52,6 +78,7 @@ struct SymProApp: App {
             CommandGroup(replacing: .newItem) {
                 Button("Open…") {
                     Task { @MainActor in
+                        ensureMainWindowVisible()
                         workspaceState.pickCrashLog()
                     }
                 }
@@ -68,11 +95,8 @@ struct SymProApp: App {
                         ForEach(recentStore.items.prefix(10)) { item in
                             Button(item.fileName) {
                                 if let url = recentStore.resolveURL(for: item) {
-                                    NotificationCenter.default.post(
-                                        name: .symProOpenRecentFile,
-                                        object: nil,
-                                        userInfo: ["url": url]
-                                    )
+                                    ensureMainWindowVisible()
+                                    workspaceState.openCrashLog(url)
                                 }
                             }
                         }
@@ -88,6 +112,17 @@ struct SymProApp: App {
                 }
             }
         }
+
+        #if os(macOS)
+        .commands {
+            CommandGroup(after: .windowSize) {
+                Button("Show Main Window") {
+                    ensureMainWindowVisible()
+                }
+                .keyboardShortcut("0", modifiers: [.command])
+            }
+        }
+        #endif
 
         Settings {
             SettingsView()

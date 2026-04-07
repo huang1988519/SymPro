@@ -122,15 +122,15 @@
 "Main" = "Main";
 "Queue: %@" = "Queue: %@";
 
-"LLM (OpenAI-compatible API)" = "LLM (OpenAI-compatible API)";
+"LLM (OpenAI-compatible API)" = "LLM (Chat Completions API)";
 "Provider" = "Provider";
-"Preset for OpenAI-compatible base URL and default model." = "Preset for OpenAI-compatible base URL and default model.";
+"Preset for OpenAI-compatible base URL and default model." = "Preset for Chat Completions base URL and default model.";
 "Custom" = "Custom";
 "OpenAI" = "OpenAI";
 "DashScope (Qwen)" = "DashScope (Qwen)";
 "DeepSeek" = "DeepSeek";
 "Base URL" = "Base URL";
-"Usually ends with /v1 for OpenAI-compatible servers." = "Usually ends with /v1 for OpenAI-compatible servers.";
+"Usually ends with /v1 for OpenAI-compatible servers." = "Usually ends with /v1 for Chat Completions servers.";
 "Model" = "Model";
 "Chat Completions model id (e.g. gpt-4o-mini, qwen-turbo)." = "Chat Completions model id (e.g. gpt-4o-mini, qwen-turbo).";
 "API Key" = "API Key";
@@ -187,7 +187,7 @@
 "Delete Provider" = "Delete Provider";
 "Delete provider confirmation" = "This will remove the URL, model, saved API key, and description. This cannot be undone.";
 "Provider help" = "Help";
-"Provider help message" = "Configure an OpenAI-compatible API (URL, model, and optional API key). The API key is saved to Keychain when you click Save. Crash analysis uses the current crash file as input.";
+"Provider help message" = "Configure a Chat Completions API (URL, model, and optional API key). The API key is saved to Keychain when you click Save. Crash analysis uses the current crash file as input.";
 "Fetch Models" = "Fetch Models";
 "Available models" = "Available models";
 "Please enter URL first." = "Please enter URL first.";
@@ -258,6 +258,7 @@
 "AI analysis not generated yet." = "AI analysis not generated yet.";
 "Please configure LLM provider in Settings first." = "Please configure LLM provider in Settings first.";
 "No analysis returned." = "No analysis returned.";
+"AI features are not available in your region." = "AI features are not available in your region.";
 "About this crash type" = "About this crash type";
 "Possible cause for this crash type" = "Possible cause for this crash type";
 "Crash reason: EXC_BAD_ACCESS" = "Likely invalid memory access, such as a dangling pointer, use-after-free, or buffer overflow.";

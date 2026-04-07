@@ -8,6 +8,8 @@ struct CrashAnalyzerMainView: View {
     @State private var showSymbolicationErrorAlert: Bool = false
     @State private var tabSelectedThreadIndex: Int = 0
     @State private var hasRequestedAINotificationPermission: Bool = false
+    
+    private var isAIEnabled: Bool { !RegionPolicy.isChinaMainland }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -44,10 +46,17 @@ struct CrashAnalyzerMainView: View {
             let content = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !content.isEmpty else { return }
             guard tab != .aiInsight else { return }
+            guard isAIEnabled else { return }
             notifyAIAnalysisReady()
         }
         .onReceive(NotificationCenter.default.publisher(for: .symProOpenAIInsight)) { _ in
+            guard isAIEnabled else { return }
             tab = .aiInsight
+        }
+        .onAppear {
+            if !isAIEnabled, tab == .aiInsight {
+                tab = .backtrace
+            }
         }
     }
 
@@ -236,7 +245,14 @@ struct CrashAnalyzerMainView: View {
                 case .binaryImages:
                     ImagesView(state: state)
                 case .aiInsight:
-                    aiInsightPanel
+                    if isAIEnabled {
+                        aiInsightPanel
+                    } else {
+                        CrashAnalyzerBacktraceView(
+                            model: activeModel,
+                            selectedThreadIndex: $tabSelectedThreadIndex
+                        )
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -247,7 +263,9 @@ struct CrashAnalyzerMainView: View {
     private var tabBar: some View {
         HStack(spacing: 18) {
             underlineTabItem(title: L10n.t("Backtrace"), tab: .backtrace)
-            underlineTabItem(title: L10n.t("AI Insight"), tab: .aiInsight)
+            if isAIEnabled {
+                underlineTabItem(title: L10n.t("AI Insight"), tab: .aiInsight)
+            }
 //            underlineTabItem(title: "Registers", tab: .registers)
 //            underlineTabItem(title: "Binary Images", tab: .binaryImages)
             Spacer(minLength: 0)

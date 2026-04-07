@@ -122,15 +122,15 @@
 "Main" = "主线程";
 "Queue: %@" = "队列：%@";
 
-"LLM (OpenAI-compatible API)" = "大语言模型（OpenAI 兼容接口）";
+"LLM (OpenAI-compatible API)" = "大语言模型（Chat Completions 接口）";
 "Provider" = "服务商";
-"Preset for OpenAI-compatible base URL and default model." = "选择预设以填充 OpenAI 兼容的 Base URL 与默认模型。";
+"Preset for OpenAI-compatible base URL and default model." = "选择预设以填充 Chat Completions 的 Base URL 与默认模型。";
 "Custom" = "自定义";
 "OpenAI" = "OpenAI";
 "DashScope (Qwen)" = "通义千问（DashScope）";
 "DeepSeek" = "DeepSeek";
 "Base URL" = "Base URL";
-"Usually ends with /v1 for OpenAI-compatible servers." = "通常为 OpenAI 兼容网关地址，一般以 /v1 结尾。";
+"Usually ends with /v1 for OpenAI-compatible servers." = "通常为 Chat Completions 兼容网关地址，一般以 /v1 结尾。";
 "Model" = "模型";
 "Chat Completions model id (e.g. gpt-4o-mini, qwen-turbo)." = "Chat Completions 模型名（如 gpt-4o-mini、qwen-turbo）。";
 "API Key" = "API 密钥";
@@ -187,7 +187,7 @@
 "Delete Provider" = "删除服务商";
 "Delete provider confirmation" = "将清除 URL、模型、已保存的 API Key 与描述，且无法撤销。";
 "Provider help" = "帮助";
-"Provider help message" = "请配置 OpenAI 兼容接口（URL、模型、可选 API Key）。点击「保存」时，密钥会写入钥匙串。崩溃分析会使用当前打开的崩溃文件作为输入。";
+"Provider help message" = "请配置 Chat Completions 兼容接口（URL、模型、可选 API Key）。点击「保存」时，密钥会写入钥匙串。崩溃分析会使用当前打开的崩溃文件作为输入。";
 "Fetch Models" = "获取模型";
 "Available models" = "可用模型";
 "Please enter URL first." = "请先填写 URL。";
@@ -258,6 +258,7 @@
 "AI analysis not generated yet." = "尚未生成 AI 解读。";
 "Please configure LLM provider in Settings first." = "请先在设置中配置 LLM 服务商。";
 "No analysis returned." = "模型未返回解读内容。";
+"AI features are not available in your region." = "该功能在你所在地区不可用。";
 "About this crash type" = "关于该崩溃类型";
 "Possible cause for this crash type" = "该崩溃类型的常见原因";
 "Crash reason: EXC_BAD_ACCESS" = "常见于非法内存访问，例如野指针、对象已释放后访问、越界读写。";

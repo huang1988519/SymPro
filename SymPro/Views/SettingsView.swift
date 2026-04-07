@@ -15,12 +15,16 @@ struct SettingsView: View {
     @State private var discoveryError: String?
     @State private var showLLMProviderSheet: Bool = false
     @State private var themeRefreshNonce: Int = 0
+    
+    private var isAIEnabled: Bool { !RegionPolicy.isChinaMainland }
 
     var body: some View {
         ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: 16) {
                 appearanceSectionCard
-                llmOpenAPISectionCard
+                if isAIEnabled {
+                    llmOpenAPISectionCard
+                }
                 aboutSectionCard
             }
             .padding(20)
@@ -34,6 +38,11 @@ struct SettingsView: View {
         }
         .onChange(of: colorScheme) { _ in
             triggerThemeRefresh()
+        }
+        .onAppear {
+            if !isAIEnabled {
+                showLLMProviderSheet = false
+            }
         }
     }
 

@@ -122,15 +122,15 @@
 "Main" = "메인";
 "Queue: %@" = "큐：%@";
 
-"LLM (OpenAI-compatible API)" = "LLM(OpenAI 호환 API)";
+"LLM (OpenAI-compatible API)" = "LLM(Chat Completions API)";
 "Provider" = "제공자";
-"Preset for OpenAI-compatible base URL and default model." = "프리셋으로 OpenAI 호환 Base URL과 기본 모델을 채웁니다.";
+"Preset for OpenAI-compatible base URL and default model." = "프리셋으로 Chat Completions Base URL과 기본 모델을 채웁니다.";
 "Custom" = "사용자 지정";
 "OpenAI" = "OpenAI";
 "DashScope (Qwen)" = "DashScope(Qwen)";
 "DeepSeek" = "DeepSeek";
 "Base URL" = "Base URL";
-"Usually ends with /v1 for OpenAI-compatible servers." = "OpenAI 호환 서버는 보통 /v1로 끝납니다.";
+"Usually ends with /v1 for OpenAI-compatible servers." = "Chat Completions 호환 서버는 보통 /v1로 끝납니다.";
 "Model" = "모델";
 "Chat Completions model id (e.g. gpt-4o-mini, qwen-turbo)." = "Chat Completions 모델 ID(예: gpt-4o-mini, qwen-turbo).";
 "API Key" = "API 키";
@@ -187,7 +187,7 @@
 "Delete Provider" = "제공자 삭제";
 "Delete provider confirmation" = "URL, 모델, 저장된 API 키, 설명이 삭제됩니다. 이 작업은 취소할 수 없습니다.";
 "Provider help" = "도움말";
-"Provider help message" = "OpenAI 호환 API(URL, 모델, 선택적 API 키)를 설정하세요. 저장을 누르면 키가 키체인에 저장됩니다. 크래시 분석에는 현재 열린 크래시 파일이 입력으로 사용됩니다.";
+"Provider help message" = "Chat Completions API(URL, 모델, 선택적 API 키)를 설정하세요. 저장을 누르면 키가 키체인에 저장됩니다. 크래시 분석에는 현재 열린 크래시 파일이 입력으로 사용됩니다.";
 "Fetch Models" = "모델 가져오기";
 "Available models" = "사용 가능한 모델";
 "Please enter URL first." = "먼저 URL을 입력하세요.";
@@ -203,6 +203,7 @@
 "AI analysis not generated yet." = "아직 AI 분석 결과가 없습니다.";
 "Please configure LLM provider in Settings first." = "먼저 설정에서 LLM 제공자를 구성하세요.";
 "No analysis returned." = "분석 결과가 반환되지 않았습니다.";
+"AI features are not available in your region." = "해당 기능은 현재 지역에서 사용할 수 없습니다.";
 "About this crash type" = "이 크래시 유형 정보";
 "Possible cause for this crash type" = "이 크래시 유형의 가능한 원인";
 "Crash reason: EXC_BAD_ACCESS" = "잘못된 메모리 접근 가능성이 큽니다(댕글링 포인터, 해제 후 접근, 범위 초과 접근).";
