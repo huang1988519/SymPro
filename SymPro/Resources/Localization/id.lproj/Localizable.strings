@@ -219,4 +219,6 @@
 "• 正在生成精简结论与修复建议" = "• Generating concise conclusion and fix suggestions";
 "• 完成后将自动展示结果" = "• Result will be shown automatically when ready";
 "点击右上角 “AI Analyze” 开始分析。" = "Click “AI Analyze” in the top-right to start.";
+"Manual address symbolication…" = "Simbolikasi alamat manual…";
+"Manual address symbolication subtitle" = "Pilih dSYM dan pecahkan satu alamat (image offset opsional).";
 

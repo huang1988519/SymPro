@@ -219,4 +219,6 @@
 "• 正在生成精简结论与修复建议" = "• 간결한 결론과 수정 제안을 생성하는 중";
 "• 完成后将自动展示结果" = "• 완료 후 결과가 자동으로 표시됩니다";
 "点击右上角 “AI Analyze” 开始分析。" = "오른쪽 상단의 “AI Analyze”를 눌러 시작하세요.";
+"Manual address symbolication…" = "주소 수동 심볼리케이션…";
+"Manual address symbolication subtitle" = "dSYM을 선택하고 단일 주소를 해석합니다(image offset 선택).";
 

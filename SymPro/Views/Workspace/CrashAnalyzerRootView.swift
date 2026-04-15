@@ -10,6 +10,7 @@ struct CrashAnalyzerRootView: View {
                 CrashAnalyzerEmptyStateView(
                     isLoading: state.isLoadingCrashLog,
                     onOpen: { state.pickCrashLog() },
+                    onManualSymbolicate: { state.showManualSymbolicateSheet = true },
                     onDropProviders: { providers in state.handleCrashLogDrop(providers: providers) }
                 )
             } else {
@@ -17,6 +18,10 @@ struct CrashAnalyzerRootView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .sheet(isPresented: $state.showManualSymbolicateSheet) {
+            ManualSymbolicateSheet()
+                .environmentObject(state)
+        }
     }
 }
 

@@ -219,4 +219,6 @@
 "• 正在生成精简结论与修复建议" = "• 簡潔な結論と修正提案を生成中";
 "• 完成后将自动展示结果" = "• 完了後に結果を自動表示します";
 "点击右上角 “AI Analyze” 开始分析。" = "右上の「AI Analyze」をクリックして開始します。";
+"Manual address symbolication…" = "アドレス手動シンボリケーション…";
+"Manual address symbolication subtitle" = "dSYM を選択し、単一アドレスを解析します（image offset は任意）。";
 

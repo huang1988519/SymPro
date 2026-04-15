@@ -235,6 +235,8 @@
 "Open Recent" = "打開最近";
 "Clear Menu" = "清空選單";
 "Manual Symbolicate…" = "手動符號化…";
+"Manual address symbolication…" = "位址手動符號化…";
+"Manual address symbolication subtitle" = "選擇 dSYM，並解析單一位址（可選 image offset）。";
 "Add" = "新增";
 "Custom directory…" = "自訂目錄…";
 "Symbolication Failed" = "符號化失敗";

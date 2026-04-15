@@ -235,6 +235,8 @@
 "Open Recent" = "Open Recent";
 "Clear Menu" = "Clear Menu";
 "Manual Symbolicate…" = "Manual Symbolicate…";
+"Manual address symbolication…" = "Manual address symbolication…";
+"Manual address symbolication subtitle" = "Pick a dSYM and resolve a single address (optional image offset).";
 "Add" = "Add";
 "Custom directory…" = "Custom directory…";
 "Symbolication Failed" = "Symbolication Failed";

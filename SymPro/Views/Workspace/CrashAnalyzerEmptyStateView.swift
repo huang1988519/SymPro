@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct CrashAnalyzerEmptyStateView: View {
     var isLoading: Bool
     var onOpen: () -> Void
+    var onManualSymbolicate: () -> Void
     var onDropProviders: ([NSItemProvider]) -> Bool
 
     @State private var isDropTargeted: Bool = false
@@ -62,6 +63,42 @@ struct CrashAnalyzerEmptyStateView: View {
                     if isLoading { return false }
                     return onDropProviders(providers)
                 }
+                .disabled(isLoading)
+
+                Button {
+                    onManualSymbolicate()
+                } label: {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(Color.secondary.opacity(0.28), lineWidth: 1)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.55))
+                            )
+
+                        HStack(spacing: 12) {
+                            Image(systemName: "magnifyingglass.circle")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundStyle(Color.primary.opacity(0.75))
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(L10n.t("Manual address symbolication…"))
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Color.primary)
+                                Text(L10n.t("Manual address symbolication subtitle"))
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Color.secondary)
+                                    .multilineTextAlignment(.leading)
+                            }
+
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 14)
+                    }
+                    .frame(width: 520, height: 110, alignment: .leading)
+                }
+                .buttonStyle(.plain)
                 .disabled(isLoading)
 
                 if isLoading {
