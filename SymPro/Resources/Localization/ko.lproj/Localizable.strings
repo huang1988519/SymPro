@@ -221,4 +221,12 @@
 "点击右上角 “AI Analyze” 开始分析。" = "오른쪽 상단의 “AI Analyze”를 눌러 시작하세요.";
 "Manual address symbolication…" = "주소 수동 심볼리케이션…";
 "Manual address symbolication subtitle" = "dSYM을 선택하고 단일 주소를 해석합니다(image offset 선택).";
+"Manual Symbolication" = "수동 심볼리케이션";
+"Open…" = "열기…";
+"Manual Symbolicate…" = "수동 심볼리케이트…";
+"Open Recent" = "최근 항목 열기";
+"No recent files" = "최근 파일 없음";
+"Clear Menu" = "메뉴 지우기";
+"Show Main Window" = "메인 창 표시";
+"Show in Finder" = "Finder에서 보기";
 

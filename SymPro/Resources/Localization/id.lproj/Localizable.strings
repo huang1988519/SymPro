@@ -221,4 +221,12 @@
 "点击右上角 “AI Analyze” 开始分析。" = "Click “AI Analyze” in the top-right to start.";
 "Manual address symbolication…" = "Simbolikasi alamat manual…";
 "Manual address symbolication subtitle" = "Pilih dSYM dan pecahkan satu alamat (image offset opsional).";
+"Manual Symbolication" = "Simbolikasi Manual";
+"Open…" = "Buka…";
+"Manual Symbolicate…" = "Simbolikasi Manual…";
+"Open Recent" = "Buka Terbaru";
+"No recent files" = "Tidak ada file terbaru";
+"Clear Menu" = "Kosongkan Menu";
+"Show Main Window" = "Tampilkan Jendela Utama";
+"Show in Finder" = "Tampilkan di Finder";
 

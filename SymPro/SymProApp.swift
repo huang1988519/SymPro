@@ -24,6 +24,15 @@ private final class SymProAppDelegate: NSObject, NSApplicationDelegate, UNUserNo
         UNUserNotificationCenter.current().delegate = self
     }
 
+    // Disable macOS state restoration so the app always starts fresh (e.g. show welcome).
+    func applicationShouldRestoreApplicationState(_ app: NSApplication) -> Bool {
+        false
+    }
+
+    func applicationShouldRestoreSecureApplicationState(_ app: NSApplication) -> Bool {
+        false
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag {
             for window in sender.windows {
@@ -56,15 +65,51 @@ struct SymProApp: App {
     @ObservedObject private var recentStore = RecentCrashLogStore.shared
 
     #if os(macOS)
+    private var mainWindowIdentifier: NSUserInterfaceItemIdentifier {
+        NSUserInterfaceItemIdentifier("MainWorkspaceWindow")
+    }
+
+    private var manualWindowIdentifier: NSUserInterfaceItemIdentifier {
+        NSUserInterfaceItemIdentifier("ManualSymbolicationWindow")
+    }
+
+    private func allMainWindows() -> [NSWindow] {
+        NSApp.windows.filter { window in
+            window.identifier == mainWindowIdentifier || window.title == "SymPro"
+        }
+    }
+
+    @discardableResult
+    private func keepSingleMainWindow(preferred: NSWindow? = nil) -> NSWindow? {
+        let mains = allMainWindows()
+        guard !mains.isEmpty else { return nil }
+
+        let keeper = preferred.flatMap { p in mains.first(where: { $0 === p }) } ?? mains[0]
+        for window in mains where window !== keeper {
+            window.close()
+        }
+        return keeper
+    }
+
     private func ensureMainWindowVisible() {
-        for window in NSApp.windows where window.canBecomeMain {
-            window.makeKeyAndOrderFront(nil)
+        if let main = keepSingleMainWindow() {
+            main.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
         }
 
         openWindow(id: "main")
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func openOrFocusManualWindow() {
+        if let existing = NSApp.windows.first(where: { $0.identifier == manualWindowIdentifier }) {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        } else {
+            openWindow(id: "manual_symbolication")
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
     #endif
 
@@ -75,13 +120,13 @@ struct SymProApp: App {
                 .preferredColorScheme(settings.appearanceMode.preferredColorScheme)
         }
         
-        WindowGroup("Manual Symbolication", id: "manual_symbolication") {
+        WindowGroup(L10n.t("Manual Symbolication"), id: "manual_symbolication") {
             ManualSymbolicationWindowView()
                 .preferredColorScheme(settings.appearanceMode.preferredColorScheme)
         }
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("Open…") {
+                Button(L10n.t("Open…")) {
                     Task { @MainActor in
                         ensureMainWindowVisible()
                         workspaceState.pickCrashLog()
@@ -92,12 +137,16 @@ struct SymProApp: App {
 
             CommandGroup(after: .newItem) {
                 Divider()
-                Button("Manual Symbolicate…") {
+                Button(L10n.t("Manual Symbolicate…")) {
+                    #if os(macOS)
+                    openOrFocusManualWindow()
+                    #else
                     openWindow(id: "manual_symbolication")
+                    #endif
                 }
-                Menu("Open Recent") {
+                Menu(L10n.t("Open Recent")) {
                     if recentStore.items.isEmpty {
-                        Button("No recent files") {}
+                        Button(L10n.t("No recent files")) {}
                             .disabled(true)
                     } else {
                         ForEach(recentStore.items.prefix(10)) { item in
@@ -111,7 +160,7 @@ struct SymProApp: App {
                     }
 
                     Divider()
-                    Button("Clear Menu") {
+                    Button(L10n.t("Clear Menu")) {
                         Task { @MainActor in
                             recentStore.removeAll()
                         }
@@ -124,7 +173,7 @@ struct SymProApp: App {
         #if os(macOS)
         .commands {
             CommandGroup(after: .windowSize) {
-                Button("Show Main Window") {
+                Button(L10n.t("Show Main Window")) {
                     ensureMainWindowVisible()
                 }
                 .keyboardShortcut("0", modifiers: [.command])

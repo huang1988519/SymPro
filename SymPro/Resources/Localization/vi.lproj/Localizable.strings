@@ -221,4 +221,12 @@
 "点击右上角 “AI Analyze” 开始分析。" = "Click “AI Analyze” in the top-right to start.";
 "Manual address symbolication…" = "Giải mã ký hiệu địa chỉ thủ công…";
 "Manual address symbolication subtitle" = "Chọn dSYM và giải mã một địa chỉ (image offset tùy chọn).";
+"Manual Symbolication" = "Giải mã ký hiệu thủ công";
+"Open…" = "Mở…";
+"Manual Symbolicate…" = "Giải mã ký hiệu thủ công…";
+"Open Recent" = "Mở gần đây";
+"No recent files" = "Không có tệp gần đây";
+"Clear Menu" = "Xóa menu";
+"Show Main Window" = "Hiển thị cửa sổ chính";
+"Show in Finder" = "Hiển thị trong Finder";
 

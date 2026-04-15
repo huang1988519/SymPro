@@ -246,6 +246,7 @@
 "Browse…" = "瀏覽…";
 "Not selected" = "未選擇";
 "No dSYM selected" = "未選擇 dSYM";
+"Show in Finder" = "在 Finder 中顯示";
 "Close" = "關閉";
 "Select" = "選擇";
 "Select dSYM" = "選擇 dSYM";
@@ -276,3 +277,5 @@
 "• 正在生成精简结论与修复建议" = "• 正在生成精簡結論與修復建議";
 "• 完成后将自动展示结果" = "• 完成後將自動顯示結果";
 "点击右上角 “AI Analyze” 开始分析。" = "點擊右上角「AI Analyze」開始分析。";
+"No recent files" = "沒有最近檔案";
+"Show Main Window" = "顯示主視窗";

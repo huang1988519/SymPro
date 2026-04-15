@@ -33,7 +33,8 @@ struct ManualSymbolicateSheet: View {
                         Divider()
                         Text(L10n.t("Not selected")).tag("")
                         ForEach(mergedOptions, id: \.uuid) { option in
-                            Text(option.displayName).tag(option.uuid)
+                            optionPickerRow(option)
+                                .tag(option.uuid)
                         }
                     }
                     .pickerStyle(.menu)
@@ -64,6 +65,13 @@ struct ManualSymbolicateSheet: View {
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                                 .help(selectedDSYMURL.path)
+                            #if os(macOS)
+                            Button(L10n.t("Show in Finder")) {
+                                NSWorkspace.shared.activateFileViewerSelecting([selectedDSYMURL])
+                            }
+                            .buttonStyle(.link)
+                            .font(.caption)
+                            #endif
                         }
                     } else {
                         Text(L10n.t("No dSYM selected"))
@@ -127,7 +135,7 @@ struct ManualSymbolicateSheet: View {
             }
         }
         .padding(16)
-        .frame(minWidth: 640, minHeight: 360)
+        .frame(maxWidth: .infinity, minHeight: 360, alignment: .topLeading)
         .onAppear {
             if selectedDSYMURL == nil, let first = mergedOptions.first {
                 selectedUUID = first.uuid
@@ -224,6 +232,26 @@ struct ManualSymbolicateSheet: View {
         let parts = path.split(separator: "/")
         guard parts.count > 3 else { return path }
         return ".../\(parts.suffix(3).joined(separator: "/"))"
+    }
+
+    @ViewBuilder
+    private func optionPickerRow(_ option: (uuid: String, displayName: String, url: URL)) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(option.displayName)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            Text(shortenedUUID(option.uuid))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+    }
+
+    private func shortenedUUID(_ uuid: String) -> String {
+        let normalized = uuid.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard normalized.count > 16 else { return normalized }
+        return "\(normalized.prefix(8))...\(normalized.suffix(8))"
     }
 
     private func runManualSymbolication() {

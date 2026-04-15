@@ -1,5 +1,8 @@
 import SwiftUI
 import UserNotifications
+#if os(macOS)
+import AppKit
+#endif
 
 struct CrashAnalyzerMainView: View {
     @EnvironmentObject private var state: SymbolicateWorkspaceState
@@ -9,9 +12,23 @@ struct CrashAnalyzerMainView: View {
     @State private var showSymbolicationErrorAlert: Bool = false
     @State private var tabSelectedThreadIndex: Int = 0
     @State private var hasRequestedAINotificationPermission: Bool = false
-    @State private var showDSYMDirectoriesPanel: Bool = false
     
     private var isAIEnabled: Bool { !RegionPolicy.isChinaMainland }
+
+    #if os(macOS)
+    private var manualWindowIdentifier: NSUserInterfaceItemIdentifier {
+        NSUserInterfaceItemIdentifier("ManualSymbolicationWindow")
+    }
+
+    private func openOrFocusManualWindow() {
+        if let existing = NSApp.windows.first(where: { $0.identifier == manualWindowIdentifier }) {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        } else {
+            openWindow(id: "manual_symbolication")
+        }
+    }
+    #endif
 
     var body: some View {
         VStack(spacing: 0) {
@@ -80,13 +97,21 @@ struct CrashAnalyzerMainView: View {
                     .foregroundStyle(Color.secondary)
             }
 
-            Button(L10n.t("Manual Symbolicate…")) {
-                openWindow(id: "manual_symbolication")
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            
             Spacer()
+
+//            Button {
+//                #if os(macOS)
+//                openOrFocusManualWindow()
+//                #else
+//                openWindow(id: "manual_symbolication")
+//                #endif
+//            } label: {
+//                Image(systemName: "wrench.and.screwdriver")
+//                    .font(.system(size: 13, weight: .semibold))
+//                    .frame(width: 28, height: 20)
+//            }
+//            .buttonStyle(.plain)
+//            .help(L10n.t("Manual Symbolicate…"))
 
             uuidMatchPill
             symbolicationStatusPill
@@ -293,33 +318,7 @@ struct CrashAnalyzerMainView: View {
 
     private var rightSidebar: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                Button {
-                    showDSYMDirectoriesPanel = false
-                } label: {
-                    Image(systemName: "doc.text.magnifyingglass")
-                        .font(.system(size: 13, weight: showDSYMDirectoriesPanel ? .regular : .semibold))
-                }
-                .buttonStyle(.plain)
-                .help("dSYM Panel")
-
-                Button {
-                    showDSYMDirectoriesPanel.toggle()
-                } label: {
-                    Image(systemName: "folder.badge.gearshape")
-                        .font(.system(size: 13, weight: showDSYMDirectoriesPanel ? .semibold : .regular))
-                }
-                .buttonStyle(.plain)
-                .help("dSYM Discovery Directories")
-
-                Spacer(minLength: 0)
-            }
-
-            if showDSYMDirectoriesPanel {
-                DSYMDiscoveryDirectoriesCard()
-            } else {
-                CrashAnalyzerDSYMPanel()
-            }
+            CrashAnalyzerDSYMPanel()
 //            CrashAnalyzerInsightPanel()
             Spacer(minLength: 0)
         }

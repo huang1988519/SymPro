@@ -1,59 +1,58 @@
 import SwiftUI
 
 struct ManualSymbolicationWindowView: View {
-    private enum RightPanel: Hashable {
-        case hidden
-        case dsymDirectories
-    }
+    @State private var showDirectories: Bool = false
 
-    @State private var rightPanel: RightPanel = .hidden
+    #if os(macOS)
+    private var manualWindowIdentifier: NSUserInterfaceItemIdentifier {
+        NSUserInterfaceItemIdentifier("ManualSymbolicationWindow")
+    }
+    #endif
 
     var body: some View {
-        HSplitView {
-            VStack(spacing: 10) {
-                Button {
-                    rightPanel = .hidden
-                } label: {
-                    Image(systemName: "wrench.and.screwdriver")
-                        .font(.system(size: 16, weight: rightPanel == .hidden ? .semibold : .regular))
-                        .frame(width: 34, height: 34)
-                }
-                .buttonStyle(.plain)
-                .help("Manual Symbolication")
-
-                Button {
-                    rightPanel = (rightPanel == .dsymDirectories) ? .hidden : .dsymDirectories
-                } label: {
-                    Image(systemName: "folder.badge.gearshape")
-                        .font(.system(size: 16, weight: rightPanel == .dsymDirectories ? .semibold : .regular))
-                        .frame(width: 34, height: 34)
-                }
-                .buttonStyle(.plain)
-                .help("dSYM Discovery Directories")
-
-                Spacer(minLength: 0)
-            }
-            .padding(.top, 12)
-            .padding(.horizontal, 6)
-            .frame(minWidth: 46, idealWidth: 54, maxWidth: 60)
-
-            ScrollView(.vertical) {
-                ManualSymbolicateSheet()
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-            }
-            .frame(minWidth: 560, idealWidth: 720, maxWidth: .infinity)
-
-            if rightPanel == .dsymDirectories {
-                ScrollView(.vertical) {
-                    DSYMDiscoveryDirectoriesCard()
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
-                }
-                .frame(minWidth: 420, idealWidth: 520, maxWidth: 620)
-            }
+        NavigationSplitView {
+            dsymDiscoveryContent
+                .navigationSplitViewColumnWidth(min: 200, ideal: 260, max: 340)
+                .navigationTitle(L10n.t("Manual Symbolication"))
+//                .toolbar {
+//                    ToolbarItem(placement: .automatic) {
+//                        Button {
+//                            showDirectories.toggle()
+//                        } label: {
+//                            Label("dSYM Directories", systemImage: "sidebar.right")
+//                                .labelStyle(.titleAndIcon)
+//                        }
+//                    }
+//                }
+        } detail: {
+            manualSymbolicateContent
         }
-        .frame(minWidth: 1024, minHeight: 640)
+        #if os(macOS)
+        .background(
+            WindowWillCloseObserver(
+                onWindowAvailable: { window in
+                    window.title = L10n.t("Manual Symbolication")
+                    window.identifier = manualWindowIdentifier
+                }
+            )
+        )
+        #endif
+    }
+
+    private var manualSymbolicateContent: some View {
+        ScrollView(.vertical) {
+            ManualSymbolicateSheet()
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private var dsymDiscoveryContent: some View {
+        ScrollView(.vertical) {
+            DSYMDiscoveryDirectoriesCard()
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
     }
 }
 

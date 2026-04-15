@@ -221,4 +221,12 @@
 "点击右上角 “AI Analyze” 开始分析。" = "Click “AI Analyze” in the top-right to start.";
 "Manual address symbolication…" = "สัญลักษณ์ที่อยู่ด้วยตนเอง…";
 "Manual address symbolication subtitle" = "เลือก dSYM แล้วแปลงที่อยู่เดียว (image offset ไม่บังคับ)";
+"Manual Symbolication" = "การแปลงสัญลักษณ์ด้วยตนเอง";
+"Open…" = "เปิด…";
+"Manual Symbolicate…" = "แปลงสัญลักษณ์ด้วยตนเอง…";
+"Open Recent" = "เปิดล่าสุด";
+"No recent files" = "ไม่มีไฟล์ล่าสุด";
+"Clear Menu" = "ล้างเมนู";
+"Show Main Window" = "แสดงหน้าต่างหลัก";
+"Show in Finder" = "แสดงใน Finder";
 

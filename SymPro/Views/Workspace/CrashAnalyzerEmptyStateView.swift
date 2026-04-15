@@ -14,6 +14,24 @@ struct CrashAnalyzerEmptyStateView: View {
             Color(nsColor: .windowBackgroundColor)
                 .ignoresSafeArea()
 
+            VStack {
+                HStack {
+                    Spacer()
+                    Button {
+                        onManualSymbolicate()
+                    } label: {
+                        Image(systemName: "wrench.and.screwdriver")
+                            .font(.system(size: 13, weight: .semibold))
+                            .frame(width: 28, height: 20)
+                            .padding(10)
+                    }
+                    .buttonStyle(.plain)
+                    .help(L10n.t("Manual Symbolicate…"))
+                    .disabled(isLoading)
+                }
+                Spacer()
+            }
+
             VStack(spacing: 18) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -63,42 +81,6 @@ struct CrashAnalyzerEmptyStateView: View {
                     if isLoading { return false }
                     return onDropProviders(providers)
                 }
-                .disabled(isLoading)
-
-                Button {
-                    onManualSymbolicate()
-                } label: {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(Color.secondary.opacity(0.28), lineWidth: 1)
-                            .background(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.55))
-                            )
-
-                        HStack(spacing: 12) {
-                            Image(systemName: "magnifyingglass.circle")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundStyle(Color.primary.opacity(0.75))
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(L10n.t("Manual address symbolication…"))
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(Color.primary)
-                                Text(L10n.t("Manual address symbolication subtitle"))
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(Color.secondary)
-                                    .multilineTextAlignment(.leading)
-                            }
-
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 14)
-                    }
-                    .frame(width: 520, height: 110, alignment: .leading)
-                }
-                .buttonStyle(.plain)
                 .disabled(isLoading)
 
                 if isLoading {
