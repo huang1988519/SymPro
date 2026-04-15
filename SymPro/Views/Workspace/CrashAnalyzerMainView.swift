@@ -3,6 +3,7 @@ import UserNotifications
 
 struct CrashAnalyzerMainView: View {
     @EnvironmentObject private var state: SymbolicateWorkspaceState
+    @Environment(\.openWindow) private var openWindow
 
     @State private var tab: AnalyzerTab = .backtrace
     @State private var showSymbolicationErrorAlert: Bool = false
@@ -79,7 +80,7 @@ struct CrashAnalyzerMainView: View {
             }
 
             Button(L10n.t("Manual Symbolicate…")) {
-                state.showManualSymbolicateSheet = true
+                openWindow(id: "manual_symbolication")
             }
             .buttonStyle(.bordered)
             .controlSize(.small)

@@ -3,6 +3,7 @@ import SwiftUI
 /// New UI root based on the provided mockups.
 struct CrashAnalyzerRootView: View {
     @EnvironmentObject private var state: SymbolicateWorkspaceState
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         Group {
@@ -10,7 +11,7 @@ struct CrashAnalyzerRootView: View {
                 CrashAnalyzerEmptyStateView(
                     isLoading: state.isLoadingCrashLog,
                     onOpen: { state.pickCrashLog() },
-                    onManualSymbolicate: { state.showManualSymbolicateSheet = true },
+                    onManualSymbolicate: { openWindow(id: "manual_symbolication") },
                     onDropProviders: { providers in state.handleCrashLogDrop(providers: providers) }
                 )
             } else {
@@ -18,10 +19,6 @@ struct CrashAnalyzerRootView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sheet(isPresented: $state.showManualSymbolicateSheet) {
-            ManualSymbolicateSheet()
-                .environmentObject(state)
-        }
     }
 }
 

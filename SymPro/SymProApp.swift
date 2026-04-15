@@ -74,6 +74,11 @@ struct SymProApp: App {
                 .environmentObject(workspaceState)
                 .preferredColorScheme(settings.appearanceMode.preferredColorScheme)
         }
+        
+        WindowGroup("Manual Symbolication", id: "manual_symbolication") {
+            ManualSymbolicationWindowView()
+                .preferredColorScheme(settings.appearanceMode.preferredColorScheme)
+        }
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("Open…") {
@@ -87,6 +92,9 @@ struct SymProApp: App {
 
             CommandGroup(after: .newItem) {
                 Divider()
+                Button("Manual Symbolicate…") {
+                    openWindow(id: "manual_symbolication")
+                }
                 Menu("Open Recent") {
                     if recentStore.items.isEmpty {
                         Button("No recent files") {}

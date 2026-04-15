@@ -6,7 +6,6 @@ import AppKit
 
 struct ManualSymbolicateSheet: View {
     @ObservedObject private var discovery = DSYMAutoDiscoveryStore.shared
-    @EnvironmentObject private var state: SymbolicateWorkspaceState
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedUUID: String = ""
