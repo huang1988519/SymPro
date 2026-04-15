@@ -9,6 +9,7 @@ struct CrashAnalyzerMainView: View {
     @State private var showSymbolicationErrorAlert: Bool = false
     @State private var tabSelectedThreadIndex: Int = 0
     @State private var hasRequestedAINotificationPermission: Bool = false
+    @State private var showDSYMDirectoriesPanel: Bool = false
     
     private var isAIEnabled: Bool { !RegionPolicy.isChinaMainland }
 
@@ -292,7 +293,33 @@ struct CrashAnalyzerMainView: View {
 
     private var rightSidebar: some View {
         VStack(alignment: .leading, spacing: 14) {
-            CrashAnalyzerDSYMPanel()
+            HStack(spacing: 8) {
+                Button {
+                    showDSYMDirectoriesPanel = false
+                } label: {
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.system(size: 13, weight: showDSYMDirectoriesPanel ? .regular : .semibold))
+                }
+                .buttonStyle(.plain)
+                .help("dSYM Panel")
+
+                Button {
+                    showDSYMDirectoriesPanel.toggle()
+                } label: {
+                    Image(systemName: "folder.badge.gearshape")
+                        .font(.system(size: 13, weight: showDSYMDirectoriesPanel ? .semibold : .regular))
+                }
+                .buttonStyle(.plain)
+                .help("dSYM Discovery Directories")
+
+                Spacer(minLength: 0)
+            }
+
+            if showDSYMDirectoriesPanel {
+                DSYMDiscoveryDirectoriesCard()
+            } else {
+                CrashAnalyzerDSYMPanel()
+            }
 //            CrashAnalyzerInsightPanel()
             Spacer(minLength: 0)
         }
